@@ -2,9 +2,9 @@ import systemPromptRaw from "../../prompts/system-prompt.md?raw";
 import scopeSafetyRaw from "../../knowledge/modules/00_scope-and-safety.md?raw";
 import explainRiskRaw from "../../knowledge/modules/01_explain-risk.md?raw";
 import understandingRaw from "../../knowledge/modules/02_understanding-and-concerns.md?raw";
-import limitationsRaw from "../../knowledge/modules/03_gail-limitations.md?raw";
-import lowAverageRaw from "../../knowledge/modules/04_low-average-risk-pathway.md?raw";
-import elevatedRaw from "../../knowledge/modules/05_elevated-risk-pathway.md?raw";
+import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
+import lowAverageRaw from "../../knowledge/modules/03_low-average-risk-pathway.md?raw";
+import elevatedRaw from "../../knowledge/modules/04_elevated-risk-pathway.md?raw";
 import clinicianDiscussionRaw from "../../knowledge/modules/06_clinical-discussion.md?raw";
 
 export type RiskBranch = "low-average" | "elevated";
