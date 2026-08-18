@@ -750,6 +750,9 @@ function clearPreviousConversation() {
 conversationConsent.addEventListener("change", () => {
   const enabled = conversationConsent.checked && Boolean(result);
   avatarPicker.classList.toggle("hidden", !enabled);
+  // Text chat is independent of LiveAvatar/Railway and should remain usable
+  // even when the video session cannot be created or connected.
+  textConversation.classList.toggle("hidden", !enabled);
   explainRiskButton.disabled = !enabled;
   if (enabled) {
     explainRiskStatus.textContent = "Choose an educator, then start the conversation.";
@@ -948,17 +951,23 @@ textChatForm.addEventListener("submit", async (event) => {
 
   try {
     if (liveAvatarSession?.state === "connected" && currentSession?.sessionId) {
-      const payload = new TextEncoder().encode(JSON.stringify({
-        type: "user_message",
-        text: userText,
-      }));
-      await liveAvatarSession.localParticipant.publishData(payload, {
-        reliable: true,
-        topic: "bc-risk-user-message",
-      });
-      textChatStatus.textContent = "Your message was sent to the avatar.";
-      logSessionEvent("text_message_sent_to_avatar", { characterCount: userText.length });
-      return;
+      try {
+        const payload = new TextEncoder().encode(JSON.stringify({
+          type: "user_message",
+          text: userText,
+        }));
+        await liveAvatarSession.localParticipant.publishData(payload, {
+          reliable: true,
+          topic: "bc-risk-user-message",
+        });
+        textChatStatus.textContent = "Your message was sent to the avatar.";
+        logSessionEvent("text_message_sent_to_avatar", { characterCount: userText.length });
+        return;
+      } catch (error) {
+        console.warn("Unable to send text through LiveAvatar; using text fallback", error);
+        logSessionEvent("text_message_avatar_send_failed", { characterCount: userText.length });
+        textChatStatus.textContent = "Video messaging is unavailable. Using text chat…";
+      }
     }
 
     const response = await postJson("/api/chat", {
