@@ -2,9 +2,9 @@ import systemPromptRaw from "../../prompts/system-prompt.md?raw";
 import scopeSafetyRaw from "../../knowledge/modules/00_scope-and-safety.md?raw";
 import explainRiskRaw from "../../knowledge/modules/01_explain-risk.md?raw";
 import understandingRaw from "../../knowledge/modules/02_understanding-and-concerns.md?raw";
-import limitationsRaw from "../../knowledge/modules/03_gail-limitations.md?raw";
-import lowAverageRaw from "../../knowledge/modules/04_low-average-risk-pathway.md?raw";
-import elevatedRaw from "../../knowledge/modules/05_elevated-risk-pathway.md?raw";
+import lowAverageRaw from "../../knowledge/modules/03_low-average-risk-pathway.md?raw";
+import elevatedRaw from "../../knowledge/modules/04_elevated-risk-pathway.md?raw";
+import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
 import clinicianDiscussionRaw from "../../knowledge/modules/06_clinical-discussion.md?raw";
 
 export type RiskBranch = "low-average" | "elevated";
@@ -26,7 +26,7 @@ export type KnowledgeTopic =
 // replies are ambiguous without this — "yes" means something different
 // after "did that make sense?" than after "want a few questions for your
 // doctor?" — and the app is the only thing that knows which one was asked.
-export type PendingConfirmation = "understanding" | "doctor_questions";
+export type PendingConfirmation = "understanding" | "doctor_questions" | "model_factors";
 
 export interface RiskResult {
   model?: string;
@@ -101,7 +101,7 @@ const MODULES: KnowledgeModule[] = [
     // guideline, gated behind the individualization caveat).
     stages: ["follow_up", "closing"],
     branches: ["low-average"],
-    topics: ["risk_explanation", "confirmed_understanding", "screening_guidance"],
+    topics: ["confirmed_understanding", "screening_guidance"],
     content: stripFrontMatter(lowAverageRaw),
   },
   {
@@ -109,7 +109,7 @@ const MODULES: KnowledgeModule[] = [
     alwaysInclude: false,
     stages: ["follow_up", "closing"],
     branches: ["elevated"],
-    topics: ["risk_explanation", "confirmed_understanding", "screening_guidance"],
+    topics: ["confirmed_understanding", "screening_guidance"],
     content: stripFrontMatter(elevatedRaw),
   },
   {
@@ -130,13 +130,48 @@ function containsAny(text: string, terms: string[]): boolean {
 // longer message that happens to contain "yes" somewhere isn't swept into
 // this branch. Bare confirmations are short by nature.
 const AFFIRMATIVE = /^(yes|yeah|yep|yup|sure|ok|okay|got it|that makes sense|makes sense|understood|i understand|i think so|that helps|sounds good)[.,!]?$/;
-const NEGATIVE = /^(no|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
+const NEGATIVE = /^(no(?:,?\s+(?:that'?s fine|thanks?|thank you))?|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
+
+export function inferPendingConfirmation(
+  assistantMessage = ""
+): PendingConfirmation | undefined {
+  const text = assistantMessage.toLowerCase().replace(/[’]/g, "'");
+  if (!text.trim()) return undefined;
+
+  if (containsAny(text, [
+    "does that make sense",
+    "did that make sense",
+    "does this make sense",
+    "did that answer your question",
+    "is that clear",
+  ])) {
+    return "understanding";
+  }
+  if (containsAny(text, [
+    "questions to bring",
+    "questions for your doctor",
+    "questions for your clinician",
+    "prepare questions",
+  ])) {
+    return "doctor_questions";
+  }
+  if (containsAny(text, [
+    "what the gail calculator looks at",
+    "what the calculator looks at",
+    "factors it does include",
+    "ones it doesn't fully capture",
+    "one of those factors",
+  ])) {
+    return "model_factors";
+  }
+  return undefined;
+}
 
 export function inferTopics(
   userMessage = "",
   pendingConfirmation?: PendingConfirmation
 ): KnowledgeTopic[] {
-  const text = userMessage.toLowerCase().trim();
+  const text = userMessage.toLowerCase().trim().replace(/[’]/g, "'");
   const topics = new Set<KnowledgeTopic>();
 
   if (!text) {
@@ -168,6 +203,14 @@ export function inferTopics(
       // (always included) close things out.
       return [];
     }
+  }
+  if (pendingConfirmation === "model_factors") {
+    if (AFFIRMATIVE.test(text)) {
+      topics.add("model_limitations");
+      topics.add("risk_factors");
+      return [...topics];
+    }
+    if (NEGATIVE.test(text)) return [];
   }
 
   if (containsAny(text, ["what does", "mean", "explain", "percentage", "percent", "average", "risk"])) {
@@ -295,6 +338,12 @@ export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
     knowledgeContext,
     "# Retrieval instruction",
     "Answer only from the application risk context and retrieved modules above. If the requested information is not supported there, say that this educator does not have enough grounded information and redirect appropriately.",
+    ...(topics.length === 0 && input.pendingConfirmation
+      ? [
+          "# Conversation state",
+          "The user declined the assistant's previous offer. Acknowledge that choice briefly and close the current topic. Do not restart the conversation, repeat the risk explanation, or ask the declined question again.",
+        ]
+      : []),
   ].join("\n\n");
 
   return {
