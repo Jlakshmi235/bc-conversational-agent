@@ -83,7 +83,13 @@ class AgentRuntime:
             room=self.room,
             room_options=build_room_options(participant_identity="client"),
         )
-        self.agent_session.generate_reply(instructions=self.request.opening_text)
+        # Speak the configured greeting verbatim. Using generate_reply here
+        # lets the LLM expand the greeting with retrieved risk guidance.
+        self.agent_session.say(
+            self.request.opening_text,
+            allow_interruptions=True,
+            add_to_chat_ctx=True,
+        )
 
     async def close(self, reason: str = "USER_CLOSED") -> None:
         if self._closed:

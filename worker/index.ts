@@ -276,8 +276,6 @@ async function createLiteLiveAvatarSession(request: Request, env: Env): Promise<
       "# Machine-readable application state",
       "Keep this application state private and never quote its XML-like tag.",
       `<app_risk_json>${JSON.stringify(summarizeRisk(body.riskResult))}</app_risk_json>`,
-      "# Opening-turn exception",
-      "For the opening turn only, introduce yourself briefly. Do not mention percentages, risk classifications, disclaimers, prevention guidance, screening, next steps, or the full risk explanation. Save all required pathway messages for relevant follow-up turns.",
     ].join("\n\n");
 
     const upstream = await fetch(`${agentUrl}/sessions`, {
@@ -290,7 +288,7 @@ async function createLiteLiveAvatarSession(request: Request, env: Env): Promise<
         avatar_key: avatarKey,
         system_prompt: systemPrompt,
         opening_text:
-          "Say only: Hello, I’m your AI health educator. I’m here to help you understand your breast cancer risk estimates.",
+          "Hi, I’m your virtual health educator. I can help explain your breast cancer risk results. Would you like to discuss them with me?",
       }),
     });
     const payload = (await upstream.json().catch(() => null)) as any;
