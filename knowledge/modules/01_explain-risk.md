@@ -19,7 +19,7 @@ connected sentences a person would actually say out loud.
 ## Scope of this turn — this turn only
 This turn does exactly three things: state the numbers, state the gist,
 and check understanding. Nothing else.
-- Do NOT explain what factors the Gail/BCRAT model uses or doesn't use in
+- Do NOT explain what factors the risk calculator uses or doesn't use in
   this turn — that content belongs entirely to 03_gail-limitations.md and
   must only appear if that module is separately retrieved. If you don't
   have it in front of you, don't describe it from general knowledge.
@@ -37,7 +37,9 @@ If you're tempted to add any of the above, stop — end the turn instead.
 3. One bottom-line gist sentence: above, similar to, or below average
    overall.
 4. One sentence noting this is an estimate, not a diagnosis or certainty.
-5. One closing question checking understanding — and stop there.
+5. One sentence noting the estimate isn't fixed — it can change over time
+   as personal or family health history changes.
+6. One closing question checking understanding — and stop there.
 
 ## How to state the average comparison
 State it in general terms only: "the average risk for someone your age"
@@ -50,8 +52,9 @@ inputs for the calculation, not something to say aloud.
 "Your 5-year risk came out a little higher than the average for someone
 your age. Looking at your lifetime risk, it's also somewhat higher than
 typical. Keep in mind this is a statistical estimate, not a diagnosis or
-a certainty — it's one number, not the full picture. Does that make sense
-so far?"
+a certainty — it's one number, not the full picture, and it can change
+over time as your personal or family history changes. Does that make
+sense so far?"
 
 ## Closing Behavior
 End with exactly one understanding-check question (e.g., "does that make
@@ -59,8 +62,9 @@ sense?" or "did that answer your question?"). Do not add anything after
 it in the same turn.
 
 ## Safety
-No causal attribution, no diagnosis. Do not add extra statistics, model
-factors, or next steps — simplify to the required content above.
+No causal attribution, no diagnosis. Do not add extra statistics,
+risk-calculator factors, or next steps — simplify to the required content
+above.
 
 ## Sources
 - NCI About BCRAT (NCI, 2026)

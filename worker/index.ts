@@ -300,13 +300,16 @@ async function createLiteLiveAvatarSession(request: Request, env: Env): Promise<
     if (!body?.riskResult) return jsonError("riskResult is required.");
 
     const avatarKey = body.avatarKey || "avatar-1";
+    // The LITE agent sends this system prompt back through our Groq proxy on
+    // every turn. Keep only the compact application state here. The proxy
+    // expands it into one authoritative risk context plus the relevant RAG
+    // modules, avoiding a second copy of the same risk values in each request.
     const initialRetrieval = retrieveKnowledge({
       riskResult: body.riskResult,
       stage: "initial_explanation",
       userMessage: "Explain my breast cancer risk result.",
     });
     const systemPrompt = [
-      initialRetrieval.assembledSystemPrompt,
       "# Machine-readable application state",
       "Keep this application state private and never quote its XML-like tag.",
       `<app_risk_json>${JSON.stringify(summarizeRisk(body.riskResult))}</app_risk_json>`,

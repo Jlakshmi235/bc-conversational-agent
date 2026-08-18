@@ -2,9 +2,9 @@ import systemPromptRaw from "../../prompts/system-prompt.md?raw";
 import scopeSafetyRaw from "../../knowledge/modules/00_scope-and-safety.md?raw";
 import explainRiskRaw from "../../knowledge/modules/01_explain-risk.md?raw";
 import understandingRaw from "../../knowledge/modules/02_understanding-and-concerns.md?raw";
-import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
-import lowAverageRaw from "../../knowledge/modules/03_low-average-risk-pathway.md?raw";
-import elevatedRaw from "../../knowledge/modules/04_elevated-risk-pathway.md?raw";
+import limitationsRaw from "../../knowledge/modules/03_gail-limitations.md?raw";
+import lowAverageRaw from "../../knowledge/modules/04_low-average-risk-pathway.md?raw";
+import elevatedRaw from "../../knowledge/modules/05_elevated-risk-pathway.md?raw";
 import clinicianDiscussionRaw from "../../knowledge/modules/06_clinical-discussion.md?raw";
 
 export type RiskBranch = "low-average" | "elevated";
@@ -18,14 +18,15 @@ export type KnowledgeTopic =
   | "family_history"
   | "next_steps"
   | "clinician_discussion"
-  | "confirmed_understanding";
+  | "confirmed_understanding"
+  | "screening_guidance";
 
 // The app must track which confirmation question the assistant most
 // recently asked and pass it back on the next turn. Plain "yes"/"no"
 // replies are ambiguous without this — "yes" means something different
 // after "did that make sense?" than after "want a few questions for your
 // doctor?" — and the app is the only thing that knows which one was asked.
-export type PendingConfirmation = "understanding" | "doctor_questions" | "model_factors";
+export type PendingConfirmation = "understanding" | "doctor_questions";
 
 export interface RiskResult {
   model?: string;
@@ -94,10 +95,13 @@ const MODULES: KnowledgeModule[] = [
     alwaysInclude: false,
     // No "initial_explanation" — this module must not fire until the user
     // has confirmed they understood the risk explanation. See
-    // confirmed_understanding below.
+    // confirmed_understanding below. screening_guidance lets this module
+    // re-fire later in the conversation if the user separately asks about
+    // screening or treatment (its content includes the USPSTF general
+    // guideline, gated behind the individualization caveat).
     stages: ["follow_up", "closing"],
     branches: ["low-average"],
-    topics: ["confirmed_understanding"],
+    topics: ["risk_explanation", "confirmed_understanding", "screening_guidance"],
     content: stripFrontMatter(lowAverageRaw),
   },
   {
@@ -105,7 +109,7 @@ const MODULES: KnowledgeModule[] = [
     alwaysInclude: false,
     stages: ["follow_up", "closing"],
     branches: ["elevated"],
-    topics: ["confirmed_understanding"],
+    topics: ["risk_explanation", "confirmed_understanding", "screening_guidance"],
     content: stripFrontMatter(elevatedRaw),
   },
   {
@@ -126,54 +130,13 @@ function containsAny(text: string, terms: string[]): boolean {
 // longer message that happens to contain "yes" somewhere isn't swept into
 // this branch. Bare confirmations are short by nature.
 const AFFIRMATIVE = /^(yes|yeah|yep|yup|sure|ok|okay|got it|that makes sense|makes sense|understood|i understand|i think so|that helps|sounds good)[.,!]?$/;
-const NEGATIVE = /^(no(?:,?\s+(?:that'?s fine|thanks?|thank you))?|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
-
-export function inferPendingConfirmation(
-  assistantMessage = ""
-): PendingConfirmation | undefined {
-  const text = assistantMessage.toLowerCase().replace(/[’]/g, "'");
-  if (!text.trim()) return undefined;
-
-  if (
-    containsAny(text, [
-      "does that make sense",
-      "did that make sense",
-      "does this make sense",
-      "did that answer your question",
-      "is that clear",
-    ])
-  ) {
-    return "understanding";
-  }
-  if (
-    containsAny(text, [
-      "questions to bring",
-      "questions for your doctor",
-      "questions for your clinician",
-      "prepare questions",
-    ])
-  ) {
-    return "doctor_questions";
-  }
-  if (
-    containsAny(text, [
-      "what the gail calculator looks at",
-      "what the calculator looks at",
-      "factors it does include",
-      "ones it doesn't fully capture",
-      "one of those factors",
-    ])
-  ) {
-    return "model_factors";
-  }
-  return undefined;
-}
+const NEGATIVE = /^(no|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
 
 export function inferTopics(
   userMessage = "",
   pendingConfirmation?: PendingConfirmation
 ): KnowledgeTopic[] {
-  const text = userMessage.toLowerCase().trim().replace(/[’]/g, "'");
+  const text = userMessage.toLowerCase().trim();
   const topics = new Set<KnowledgeTopic>();
 
   if (!text) {
@@ -206,14 +169,6 @@ export function inferTopics(
       return [];
     }
   }
-  if (pendingConfirmation === "model_factors") {
-    if (AFFIRMATIVE.test(text)) {
-      topics.add("model_limitations");
-      topics.add("risk_factors");
-      return [...topics];
-    }
-    if (NEGATIVE.test(text)) return [];
-  }
 
   if (containsAny(text, ["what does", "mean", "explain", "percentage", "percent", "average", "risk"])) {
     topics.add("risk_explanation");
@@ -238,6 +193,13 @@ export function inferTopics(
   }
   if (containsAny(text, ["doctor", "clinician", "provider", "appointment", "visit", "ask", "screen", "mammogram", "mri", "testing"])) {
     topics.add("clinician_discussion");
+  }
+  // Separate from clinician_discussion (which is about preparing a
+  // question list) — this triggers the pathway module's actual general
+  // screening guideline content (e.g., the USPSTF biennial mammography
+  // guidance for the average-risk branch), not question-prep content.
+  if (containsAny(text, ["screen", "screening", "mammogram", "mammography", "biennial", "how often should i", "what screening", "treatment"])) {
+    topics.add("screening_guidance");
   }
 
   if (topics.size === 0) topics.add("understanding");
@@ -333,12 +295,6 @@ export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
     knowledgeContext,
     "# Retrieval instruction",
     "Answer only from the application risk context and retrieved modules above. If the requested information is not supported there, say that this educator does not have enough grounded information and redirect appropriately.",
-    ...(topics.length === 0 && input.pendingConfirmation
-      ? [
-          "# Conversation state",
-          "The user declined the assistant's previous offer. Acknowledge that choice briefly and close the current topic. Do not restart the conversation, repeat the risk explanation, or ask the declined question again.",
-        ]
-      : []),
   ].join("\n\n");
 
   return {
