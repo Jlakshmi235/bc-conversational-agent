@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: bc-risk-liveavatar-lite-agent
+Version: 0.1.0
+Summary: LITE-mode LiveAvatar agent for the BC Risk Educator
+Requires-Python: <3.15,>=3.11
+Requires-Dist: certifi>=2025.8.3
+Requires-Dist: fastapi~=0.116
+Requires-Dist: uvicorn[standard]~=0.35
+Requires-Dist: httpx~=0.28
+Requires-Dist: python-dotenv~=1.1
+Requires-Dist: websockets~=15.0
+Requires-Dist: livekit-agents[silero,turn-detector]~=1.5
+Requires-Dist: livekit-plugins-ai-coustics~=0.2
+Requires-Dist: livekit-plugins-openai~=1.5
+Requires-Dist: audioop-lts; python_version >= "3.13"
+Provides-Extra: dev
+Requires-Dist: pytest~=8.4; extra == "dev"
+Requires-Dist: pytest-asyncio~=1.1; extra == "dev"
+Requires-Dist: ruff~=0.12; extra == "dev"

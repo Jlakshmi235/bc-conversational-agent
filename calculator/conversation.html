@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BC Risk Educator</title>
+  <link rel="icon" href="/calculator/favicon.png" type="image/png">
+  <link rel="stylesheet" href="/calculator/styles.css">
+</head>
+<body class="conversation-page">
+  <main class="container results-page">
+    <header class="page-heading">
+      <h2>BREAST CANCER RISK ASSESSMENT</h2>
+    </header>
+
+    <div id="missingResult" class="message error hidden" role="alert">
+      No risk result was found. Please complete the calculator first.
+    </div>
+
+    <section id="explainRiskSection" class="explain-risk-section" aria-labelledby="explainRiskHeading">
+      <h2 id="explainRiskHeading">Want help understanding your risk estimates?</h2>
+      <p>
+        Talk or chat by text with a AI virtual health educator. It is not a clinician and does not
+        provide a diagnosis or individualized medical advice.
+      </p>
+
+      <div class="conversation-consent" id="conversationConsentPanel">
+        <h3>Before the conversation</h3>
+        <label class="consent-choice">
+          <input id="conversationConsent" type="checkbox">
+          <span>
+            I understand this is an AI health educational tool, not a clinician. If I start the voice
+            conversation, my browser will ask for microphone access. I can end or mute the session at any time.
+          </span>
+        </label>
+      </div>
+
+      <fieldset id="avatarPicker" class="avatar-picker hidden">
+        <legend>Choose your avatar</legend>
+        <div class="avatar-picker-options">
+          <label class="avatar-picker-choice">
+            <input type="radio" name="avatarChoice" value="avatar-1" checked>
+            <img src="assets/avatar-educator-1.png" alt="Educator 1">
+            <!-- <span>Educator 1</span> -->
+          </label>
+          <label class="avatar-picker-choice">
+            <input type="radio" name="avatarChoice" value="avatar-2">
+            <img src="assets/avatar-educator-2.png" alt="Educator 2">
+            <!-- <span>Educator 2</span> -->
+          </label>
+          <label class="avatar-picker-choice">
+            <input type="radio" name="avatarChoice" value="avatar-3">
+            <img src="assets/avatar-educator-3.png" alt="Educator 3">
+            <!-- <span>Educator 3</span> -->
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="start-options">
+        <button id="explainRiskButton" type="button" disabled>Start conversation</button>
+      </div>
+
+      <div id="avatarConnection" class="avatar-connection hidden" aria-live="polite">
+        <div id="avatarStage" class="avatar-stage-full">
+          <div class="session-indicators">
+            <span id="sessionTimer" class="session-timer hidden" role="timer">1:00 left</span>
+            <span id="sessionStateBadge" class="session-state-badge">Not connected</span>
+          </div>
+          <div class="avatar-stage-placeholder">
+            <img
+              src="assets/avatar-educator-1.png"
+              alt="AI health educator placeholder"
+            >
+            <div class="avatar-placeholder-copy">
+              <strong>AI health educator</strong>
+              <span id="avatarPlaceholderText">The AI health educator will appear here when the video session connects.</span>
+            </div>
+          </div>
+          <div class="avatar-controls avatar-overlay-controls" aria-label="Voice conversation controls">
+            <button id="muteButton" class="secondary-button avatar-icon-button hidden" type="button" aria-label="Mute microphone" title="Mute microphone">
+              <svg class="mic-on-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"></path>
+                <path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3M8 22h8"></path>
+              </svg>
+              <svg class="mic-off-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m4 4 16 16M9 9v3a3 3 0 0 0 4.7 2.5M15 10V6a3 3 0 0 0-5.6-1.5M5 11v1a7 7 0 0 0 11.7 5.2M19 11v1a7 7 0 0 1-.5 2.6M12 19v3M8 22h8"></path>
+              </svg>
+            </button>
+            <button id="transcriptButton" class="secondary-button avatar-icon-button hidden" type="button" aria-label="Go to transcript and text conversation" title="Transcript and text conversation" aria-controls="textConversation">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path>
+                <path d="M7 8h10M7 12h7"></path>
+              </svg>
+            </button>
+            <button id="enableAudioButton" class="secondary-button hidden" type="button">Enable avatar audio</button>
+            <button id="reconnectButton" class="secondary-button hidden" type="button">Reconnect</button>
+            <button id="endConversationButton" class="danger-button avatar-icon-button end-conversation-icon hidden" type="button" aria-label="End conversation" title="End conversation">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M6 6 18 18M18 6 6 18"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <p id="avatarStatus" class="hidden" aria-hidden="true"> </p>
+        <p id="explainRiskStatus" class="explain-risk-status hidden" aria-hidden="true"></p>
+        <p id="microphoneStatus" class="microphone-status hidden" aria-hidden="true">Microphone off.</p>
+      </div>
+
+      <section id="textConversation" class="text-conversation hidden" aria-labelledby="textConversationHeading">
+        <h3 id="textConversationHeading" tabindex="-1">Transcript and Text Conversation</h3>
+
+        <div class="chat-window">
+          <div id="textTranscript" class="conversation-transcript" aria-live="polite" aria-label="Text conversation transcript"></div>
+
+          <form id="textChatForm" class="response-composer">
+            <div class="composer-input-row">
+              <textarea id="textChatInput" maxlength="1000" aria-label="Ask about your risk result" placeholder="Chat with your AI health educator. Ask for help understanding your risk estimates, what the numbers mean, or possible next steps."></textarea>
+              <button id="sendTextButton" class="send-message-button" type="submit" aria-label="Send message" title="Send message">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="m3 11 17-8-8 17-2-7-7-2Z"></path>
+                  <path d="m10 13 4-4"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="composer-actions">
+              <button id="clearTranscriptButton" class="secondary-button hidden" type="button" aria-hidden="true">Clear text transcript</button>
+            </div>
+            <p id="textChatStatus" class="text-chat-status" aria-live="polite"></p>
+          </form>
+        </div>
+        <p id="liveAvatarCredits" class="liveavatar-credits" aria-live="polite">LiveAvatar credits remaining: checking…</p>
+      </section>
+    </section>
+
+    <div id="conversationDocumentActions" class="document-actions conversation-document-actions hidden">
+      <button id="printRiskButton" class="document-action-button" type="button">Save risk estimate</button>
+      <button id="saveTranscriptButton" class="document-action-button" type="button">Save transcript</button>
+      <button id="downloadJsonButton" class="document-action-button" type="button">Download session JSON</button>
+    </div>
+
+    <div id="conversationNavigationActions" class="results-actions hidden">
+      <a class="button-link secondary-link" href="results.html">Back to results</a>
+      <a class="button-link new-assessment-link" href="/calculator/">Start a new assessment</a>
+    </div>
+  </main>
+
+  <script type="module" src="./results.js"></script>
+</body>
+</html>

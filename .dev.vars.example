@@ -1,0 +1,18 @@
+# Groq is called only by the Cloudflare Worker.
+GROQ_API_KEY=replace_me
+GROQ_MODEL=openai/gpt-oss-120b
+
+# LiveAvatar account access (credits endpoint remains on the Cloudflare Worker).
+LIVEAVATAR_API_KEY=replace_me
+
+# Public URL of the separately deployed Python LITE agent service.
+LIVEAVATAR_AGENT_URL=http://127.0.0.1:8080
+LITE_AGENT_SHARED_SECRET=replace_with_a_long_random_value
+
+# Auth token LiveAvatar uses when calling the OpenAI-compatible Worker proxy.
+# Use a long random string and keep it secret.
+LLM_PROXY_TOKEN=replace_with_a_different_long_random_value
+
+# Needed only when registering the proxy with LiveAvatar.
+# Must be a public URL reachable by LiveAvatar, e.g. your Cloudflare deployment.
+PUBLIC_APP_URL=https://replace-me.example.workers.dev

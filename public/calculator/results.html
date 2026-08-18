@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BC Risk Educator</title>
+  <link rel="icon" href="/calculator/favicon.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container results-page">
+    <header class="page-heading">
+      <h2>BREAST CANCER RISK ASSESSMENT</h2>
+    </header>
+
+    <section id="riskResults" aria-live="polite" aria-labelledby="riskResultsHeading">
+      <h2 id="riskResultsHeading">Personalized breast cancer risk estimates</h2>
+      <p id="resultModel" class="result-model"></p>
+
+      <div class="risk-results">
+        <article class="risk-result risk-result-unboxed">
+          <h3>5-year risk</h3>
+          <div class="comparison-row">
+            <div>
+              <span class="comparison-label">Your estimated risk</span>
+              <p id="fiveYearIndividual" class="comparison-value">—</p>
+            </div>
+            <div>
+              <span class="comparison-label">Average risk</span>
+              <p id="fiveYearAverage" class="comparison-value">—</p>
+            </div>
+          </div>
+          <p id="fiveYearDetails" class="result-note"></p>
+        </article>
+
+        <article class="risk-result risk-result-unboxed lifetime-risk">
+          <h3>Lifetime risk</h3>
+          <div class="comparison-row">
+            <div>
+              <span class="comparison-label">Your estimated risk</span>
+              <p id="lifetimeIndividual" class="comparison-value">—</p>
+            </div>
+            <div>
+              <span class="comparison-label">Average risk</span>
+              <p id="lifetimeAverage" class="comparison-value">—</p>
+            </div>
+          </div>
+          <p id="lifetimeDetails" class="result-note"></p>
+        </article>
+      </div>
+
+      <section id="answerSummary" class="answer-summary hidden" aria-labelledby="answerSummaryHeading">
+        <h3 id="answerSummaryHeading">Your answers</h3>
+        <dl id="answerSummaryList"></dl>
+      </section>
+
+      <div class="document-actions">
+        <button id="printRiskButton" class="document-action-button" type="button">Save risk estimate</button>
+      </div>
+
+      <div class="explain-risk-handoff">
+        <a class="button-link secondary-link" href="index.html"><span aria-hidden="true">←</span> Back to calculator</a>
+        <a class="button-link" href="conversation.html">Explain risk estimates <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+
+    <div id="missingResult" class="message error hidden" role="alert">
+      No risk result was found. Please complete the calculator first.
+    </div>
+
+  </main>
+
+  <script src="results-summary.js"></script>
+</body>
+</html>

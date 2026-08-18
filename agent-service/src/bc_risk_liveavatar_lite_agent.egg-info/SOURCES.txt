@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/bc_risk_liveavatar_lite_agent.egg-info/PKG-INFO
+src/bc_risk_liveavatar_lite_agent.egg-info/SOURCES.txt
+src/bc_risk_liveavatar_lite_agent.egg-info/dependency_links.txt
+src/bc_risk_liveavatar_lite_agent.egg-info/requires.txt
+src/bc_risk_liveavatar_lite_agent.egg-info/top_level.txt
+tests/test_service.py

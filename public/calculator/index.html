@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BC Risk Educator</title>
+  <link rel="icon" href="/calculator/favicon.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <header class="page-heading">
+      <h2>BREAST CANCER RISK ASSESSMENT</h2>
+    </header>
+
+    <section class="about-calculator" aria-labelledby="aboutCalculatorHeading">
+      <h2 id="aboutCalculatorHeading">About this tool</h2>
+      <p>
+        This calculator uses the
+        <a href="https://bcrisktool.cancer.gov/about.html" target="_blank" rel="noopener noreferrer">
+          Gail Model </a> to estimate a patient's 
+        risk of invasive breast cancer. Results are estimates only and do not replace 
+        clinical judgment. Some patients may require a different risk assessment tool.
+      </p>
+    </section>
+
+    <form id="riskForm" novalidate>
+      <fieldset id="eligibilitySection">
+        <legend><span>Participant eligibility</span></legend>
+
+        <div class="question">
+          <p>
+            Does the patient have a medical history of breast cancer, ductal
+            carcinoma in situ (DCIS), lobular carcinoma in situ (LCIS), or
+            previous radiation therapy to the chest for Hodgkin lymphoma?
+          </p>
+
+          <label class="choice">
+            <input type="radio" name="priorCancerOrChestRadiation" value="yes" required>
+            Yes
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="priorCancerOrChestRadiation" value="no">
+            No
+          </label>
+        </div>
+
+        <div class="question">
+          <p>
+            Does the patient have a BRCA1 or BRCA2 mutation, or a diagnosed
+            genetic syndrome associated with elevated breast cancer risk?
+          </p>
+
+          <label class="choice">
+            <input type="radio" name="geneticMutation" value="yes" required>
+            Yes
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="geneticMutation" value="no">
+            No
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="geneticMutation" value="unknown">
+            Unknown
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset id="demographicsSection" class="survey-section">
+        <legend><span>Demographics</span></legend>
+
+        <label for="currentAge">
+          What is the patient’s age?
+        </label>
+
+        <p class="helper">
+          This calculator is intended for women between ages 35 and 85.
+        </p>
+
+        <input
+          type="number"
+          id="currentAge"
+          name="currentAge"
+          min="35"
+          max="85"
+          required
+          placeholder="Example: 45"
+        >
+
+        <label for="raceGroup">
+          What is the race and ethnicity that the patient identifies with?
+        </label>
+
+        <select id="raceGroup" name="raceGroup" required>
+          <option value="">Choose one</option>
+          <option value="white">White</option>
+          <option value="black">Black or African American</option>
+          <option value="hispanic">Hispanic or Latino</option>
+          <option value="asian">Asian Amercian (includes Native Hawaiian)</option>
+          <option value="native-other">American Indian or Alaska Native</option>
+          <option value="unknown">Unknown</option>
+        </select>
+
+        <div id="subgroupWrapper" class="hidden">
+          <label for="raceSubgroup">
+            What is the sub-race/ethnicity or place of birth?
+          </label>
+
+          <select id="raceSubgroup" name="raceSubgroup">
+            <option value="">Choose one</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset id="familyHistorySection" class="survey-section">
+
+        <legend><span>Patient and family history</span></legend>
+
+        <div class="question">
+          <p>
+            Has the patient ever had a breast biopsy with a benign
+            (not cancer) diagnosis?
+          </p>
+
+          <label class="choice">
+            <input type="radio" name="benignBiopsy" value="yes" required>
+            Yes
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="benignBiopsy" value="no">
+            No
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="benignBiopsy" value="unknown">
+            Unknown
+          </label>
+        </div>
+
+        <div id="biopsyDetails" class="conditional hidden">
+          <input type="hidden" id="biopsyCountDefault" name="biopsyCount" value="0">
+          <div class="question">
+            <p>
+              How many breast biopsies with a benign diagnosis has the patient had?
+            </p>
+
+            <label class="choice">
+              <input type="radio" name="biopsyCount" value="1">
+              1
+            </label>
+
+            <label class="choice">
+              <input type="radio" name="biopsyCount" value="2">
+              2 or more
+            </label>
+          </div>
+
+          <div class="question">
+            <p>
+              Has the patient ever had a breast biopsy with atypical hyperplasia?
+            </p>
+
+            <label class="choice">
+              <input type="radio" name="hyperplasia" value="1">
+              Yes
+            </label>
+
+            <label class="choice">
+              <input type="radio" name="hyperplasia" value="0">
+              No
+            </label>
+
+            <label class="choice">
+              <input type="radio" name="hyperplasia" value="99">
+              Unknown
+            </label>
+          </div>
+        </div>
+
+        <div class="question">
+          <p>
+            What was the patient’s age at the time of her first menstrual period?
+          </p>
+
+          <label class="choice">
+            <input type="radio" name="ageMen" value="11" required>
+            7 to 11
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="ageMen" value="12">
+            12 to 13
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="ageMen" value="14">
+            14 or older
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="ageMen" value="99">
+            Unknown
+          </label>
+        </div>
+
+        <label for="ageFirstBirth">
+          What was the patient’s age at first live birth?
+        </label>
+
+        <select id="ageFirstBirth" name="ageFirstBirth" required>
+          <option value="">Choose one</option>
+          <option value="19">Younger than 20</option>
+          <option value="22">20 to 24</option>
+          <option value="27">25 to 29</option>
+          <option value="30">30 or older</option>
+          <option value="98">No live births</option>
+          <option value="99">Unknown</option>
+        </select>
+
+        <div class="question">
+          <p>
+            How many of the patient’s first-degree relatives
+            (mother, sisters, daughters) have had breast cancer?
+          </p>
+
+          <label class="choice">
+            <input type="radio" name="relatives" value="0" required>
+            None
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="relatives" value="1">
+            One
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="relatives" value="2">
+            More than one
+          </label>
+
+          <label class="choice">
+            <input type="radio" name="relatives" value="99">
+            Unknown
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="acknowledgment">
+        <label class="acknowledgment-label">
+          <input type="checkbox" id="riskAcknowledgment" required>
+          <span>
+            I understand that this calculator provides an estimate only and does not
+            diagnose cancer or replace professional medical advice.
+          </span>
+        </label>
+      </div>
+
+      <button id="submitButton" type="submit">
+        Calculate risk
+      </button>
+    </form>
+
+    <div id="eligibilityMessage" class="message warning hidden" aria-live="polite"></div>
+    <div id="error" class="message error hidden" aria-live="polite"></div>
+
+    <div id="warningModal" class="modal hidden" role="dialog"
+      aria-modal="true" aria-labelledby="warningTitle" aria-describedby="warningMessage">
+      
+      <div class="modal-backdrop"></div>
+
+      <div class="modal-content" tabindex="-1">
+        <div class="warning-icon" aria-hidden="true">!</div>
+
+        <h2 id="warningTitle">This tool may not be appropriate</h2>
+
+        <p id="warningMessage"></p>
+
+        <a href="https://bcrisktool.cancer.gov/about.html#OtherRiskAssessmentTools" class="alternative-tools-link"
+        target="_blank" rel="noopener noreferrer">
+          View other risk assessment tools
+        </a>
+
+        <button type="button" id="closeWarningModal">
+          Close
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

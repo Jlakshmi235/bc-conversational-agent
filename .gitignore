@@ -1,0 +1,12 @@
+node_modules/
+agent-service/.venv/
+agent-service/.pytest_cache/
+agent-service/.ruff_cache/
+agent-service/**/__pycache__/
+dist/
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+.DS_Store

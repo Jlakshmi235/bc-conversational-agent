@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "breast-risk-avatar-app",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-08",
+  // LiveAvatar IDs and API keys are managed in the Cloudflare dashboard.
+  // Preserve those bindings when deploying this configuration with Wrangler.
+  "keep_vars": true,
+  "vars": {
+    "GROQ_MODEL": "openai/gpt-oss-120b"
+  },
+  "assets": {
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "nci-bcrat",
+    "title": "NCI About BCRAT",
+    "organization": "National Cancer Institute",
+    "year": 2026,
+    "used_in": ["scope-and-safety", "explain-risk", "gail-limitations"]
+  },
+  {
+    "id": "acs-nbcrt-risk-communication",
+    "title": "ACS National Breast Cancer Roundtable Risk Communication Scripts",
+    "organization": "National Breast Cancer Roundtable",
+    "year": 2025,
+    "used_in": ["scope-and-safety", "explain-risk", "understanding-and-concerns", "low-average-risk-pathway", "elevated-risk-pathway", "clinical-discussion"]
+  },
+  {
+    "id": "acs-screening-guidance",
+    "title": "ACS Screening Guidance",
+    "organization": "American Cancer Society",
+    "year": 2023,
+    "used_in": ["low-average-risk-pathway", "elevated-risk-pathway"]
+  },
+  {
+    "id": "etkin-kramer-2026",
+    "title": "Etkin-Kramer et al.",
+    "year": 2026,
+    "used_in": ["low-average-risk-pathway", "elevated-risk-pathway", "clinical-discussion"]
+  },
+  {
+    "id": "md-anderson-risk-assessment",
+    "title": "Breast Cancer Risk Assessments: What to Know / Cancerwise",
+    "organization": "UT MD Anderson Cancer Center",
+    "year": "2024/2026",
+    "used_in": ["gail-limitations", "clinical-discussion"]
+  },
+  {
+    "id": "van-strien-knippenberg-2024",
+    "title": "van Strien-Knippenberg et al.",
+    "year": 2024,
+    "used_in": ["understanding-and-concerns"]
+  }
+]

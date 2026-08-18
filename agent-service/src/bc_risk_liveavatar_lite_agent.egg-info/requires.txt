@@ -1,0 +1,17 @@
+certifi>=2025.8.3
+fastapi~=0.116
+uvicorn[standard]~=0.35
+httpx~=0.28
+python-dotenv~=1.1
+websockets~=15.0
+livekit-agents[silero,turn-detector]~=1.5
+livekit-plugins-ai-coustics~=0.2
+livekit-plugins-openai~=1.5
+
+[:python_version >= "3.13"]
+audioop-lts
+
+[dev]
+pytest~=8.4
+pytest-asyncio~=1.1
+ruff~=0.12
