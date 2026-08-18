@@ -14,7 +14,7 @@ dependencies = [
   "httpx~=0.28",
   "python-dotenv~=1.1",
   "websockets~=15.0",
-  "livekit-agents[silero,turn-detector]~=1.5",
+  "livekit-agents[silero]~=1.5",
   "livekit-plugins-openai~=1.5",
   "audioop-lts; python_version >= '3.13'",
 ]

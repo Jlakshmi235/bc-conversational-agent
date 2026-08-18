@@ -103,7 +103,9 @@ class AgentRuntime:
             with contextlib.suppress(Exception):
                 await client.stop_session(
                     self.started.session_token,
-                    reason,
+                    # Internal cleanup reasons such as ROOM_DISCONNECTED and
+                    # SERVER_SHUTDOWN are not accepted by LiveAvatar's API.
+                    "USER_CLOSED",
                 )
 
 

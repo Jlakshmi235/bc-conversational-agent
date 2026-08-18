@@ -51,7 +51,10 @@ class AvatarWebSocket:
                 event = json.loads(raw)
                 if event.get("type") == "session.state_updated" and event.get("state") == "connected":
                     self._connected.set()
-                logger.info("LiveAvatar event: %s", event)
+                if event.get("type") == "agent.audio_buffer_appended":
+                    logger.debug("LiveAvatar event: %s", event)
+                else:
+                    logger.info("LiveAvatar event: %s", event)
         except (ConnectionClosed, json.JSONDecodeError) as error:
             logger.warning("LiveAvatar WebSocket reader stopped: %s", error)
 

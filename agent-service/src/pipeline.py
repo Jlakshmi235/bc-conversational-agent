@@ -37,9 +37,14 @@ def build_session(
             voice=tts_voice_id,
             http_session=http_session,
         ),
-        turn_detection=inference.TurnDetector(),
         vad=vad,
-        preemptive_generation=True,
+        # Railway Free is limited to 512 MB. The local semantic turn detector
+        # can consume nearly that by itself, so use Deepgram's streaming STT
+        # endpointing and keep the shared Silero VAD for speech/interruption.
+        turn_handling={
+            "turn_detection": "stt",
+            "preemptive_generation": {"enabled": True},
+        },
     )
 
 
