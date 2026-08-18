@@ -1,5 +1,6 @@
 import { proxyChatCompletion } from "./services/groq-proxy";
 import {
+  inferPendingConfirmation,
   retrieveKnowledge,
   type ConversationStage,
   type RiskResult,
@@ -230,11 +231,15 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
       .reverse()
       .find((message) => message.role === "user")?.content;
     if (!lastUserMessage) return jsonError("A user message is required.");
+    const previousAssistantMessage = [...cleanMessages]
+      .reverse()
+      .find((message) => message.role === "assistant")?.content || "";
 
     const retrieval = retrieveKnowledge({
       riskResult: body.riskResult,
       stage: body.stage ?? "follow_up",
       userMessage: lastUserMessage,
+      pendingConfirmation: inferPendingConfirmation(previousAssistantMessage),
     });
 
     const groqRequest = {

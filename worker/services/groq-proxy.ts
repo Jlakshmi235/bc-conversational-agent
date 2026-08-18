@@ -1,4 +1,9 @@
-import { retrieveKnowledge, type ConversationStage, type RiskResult } from "./knowledge";
+import {
+  inferPendingConfirmation,
+  retrieveKnowledge,
+  type ConversationStage,
+  type RiskResult,
+} from "./knowledge";
 
 interface GroqProxyEnv {
   GROQ_API_KEY: string;
@@ -24,6 +29,14 @@ function getLastUserMessage(messages: ChatMessage[]): string {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
     if (message.role === "user" && typeof message.content === "string") return message.content;
+  }
+  return "";
+}
+
+function getLastAssistantMessage(messages: ChatMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (message.role === "assistant" && typeof message.content === "string") return message.content;
   }
   return "";
 }
@@ -96,6 +109,7 @@ export async function proxyChatCompletion(request: Request, env: GroqProxyEnv): 
       riskResult,
       stage: ["initial_explanation", "follow_up", "closing"].includes(stage) ? stage : "follow_up",
       userMessage: getLastUserMessage(body.messages),
+      pendingConfirmation: inferPendingConfirmation(getLastAssistantMessage(body.messages)),
     });
 
     messages = [
