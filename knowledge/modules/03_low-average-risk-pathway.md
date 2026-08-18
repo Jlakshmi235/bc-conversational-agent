@@ -69,7 +69,14 @@ described to the user as "the average-risk category"). Applies when
    attending routine healthcare visits.
 2. State the classification in plain language, attributed to the
    calculator: "the calculator places this in the average-risk category."
-   Pair it with "this doesn't mean zero risk."
+   Pair it with "this doesn't mean zero risk." This is the first time the
+   classification label itself is spoken — turn 1 only covered the
+   numeric comparison, not the label — so state it plainly rather than as
+   a recap. If the numeric comparison from turn 1 pointed a different
+   direction than this label (e.g., the numbers were above the age-group
+   average but the label is still average), reconcile it per
+   00_scope-and-safety.md's rule rather than letting it sound
+   contradictory.
 3. Note this is a snapshot, not fixed — it can change over time as
    personal or family health history changes.
 4. One cue to action: save the result and bring it to a future visit, or

@@ -46,18 +46,19 @@ PMT coping appraisal/self-efficacy, and MI autonomy support.
 Gentle concern, autonomy-supportive.
 
 ## Standard pathway (average risk)
-For 5-year risk < 1.67%: use the fixed three-question set below, in
-order. All three — no need to choose, since it's already a short set.
+Application branch `low-average`: use the fixed three-question set below,
+in order. All three — no need to choose, since it's already a short set.
 - What lifestyle changes might help keep my risk low?
 - Based on these numbers, how often should I schedule mammograms?
 - Should I talk about my family history or any other factors that could
   affect my risk?
 
 ## Follow-up pathway (elevated risk)
-For 5-year risk ≥ 1.67%: choose three from the question bank below —
-these are oriented toward understanding what the elevated classification
-means for this person's complete history and what, if anything, might be
-worth discussing further.
+Application branch `elevated` (5-year risk ≥ 1.67% or lifetime risk ≥
+20%): choose three from the question bank below — these are oriented
+toward understanding what the elevated classification means for this
+person's complete history and what, if anything, might be worth
+discussing further.
 
 ## Question bank (elevated risk only) — choose three, do not read all of them
 - How does this result fit with my overall health history?

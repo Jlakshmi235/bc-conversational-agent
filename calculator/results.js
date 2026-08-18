@@ -43,6 +43,7 @@ let sessionEndRequested = false;
 let currentSession = JSON.parse(sessionStorage.getItem("liveAvatarSession") || "null");
 let microphoneMuted = false;
 let sessionTimerInterval = null;
+let liveAvatarCreditsAvailable = null;
 const receivedVoiceEventIds = new Set();
 const SESSION_LOG_KEY = "breastRiskSession";
 const TEXT_TRANSCRIPT_KEY = "breastRiskTextTranscript";
@@ -405,9 +406,16 @@ async function refreshLiveAvatarCredits() {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.error || "Credits unavailable.");
     liveAvatarCredits.textContent = `LiveAvatar credits remaining: ${payload.remainingCredits}`;
+    const remainingCredits = Number(payload.remainingCredits);
+    liveAvatarCreditsAvailable = Number.isFinite(remainingCredits)
+      ? remainingCredits > 0
+      : null;
+    return liveAvatarCreditsAvailable;
   } catch (error) {
     console.error(error);
+    liveAvatarCreditsAvailable = null;
     liveAvatarCredits.textContent = "LiveAvatar credits remaining: unavailable";
+    return null;
   }
 }
 
@@ -747,6 +755,18 @@ function clearPreviousConversation() {
   textChatStatus.textContent = "";
 }
 
+function ensureTextFallbackGreeting() {
+  if (textMessages.length > 0) return;
+  textMessages.push({
+    role: "assistant",
+    content: "Hi, I'm your virtual health educator. I'm here to help you understand your breast cancer risk results. This is not a diagnosis, and I'm not a clinician. What would you like help understanding?",
+    timestamp: new Date().toISOString(),
+    channel: "text",
+  });
+  saveTranscript();
+  syncTextTranscriptToSessionLog();
+}
+
 conversationConsent.addEventListener("change", () => {
   const enabled = conversationConsent.checked && Boolean(result);
   avatarPicker.classList.toggle("hidden", !enabled);
@@ -784,6 +804,23 @@ explainRiskButton.addEventListener("click", async () => {
   avatarConnection.classList.remove("hidden");
   textConversation.classList.remove("hidden");
   microphoneStatus.textContent = "Microphone off.";
+
+  // Text chat uses the Cloudflare/Groq endpoint directly and does not require
+  // a LiveAvatar session. When credits are exhausted, start in text-only mode
+  // instead of making a billable session request that is guaranteed to fail.
+  if (liveAvatarCreditsAvailable === null) await refreshLiveAvatarCredits();
+  if (liveAvatarCreditsAvailable === false) {
+    avatarConnection.classList.remove("hidden");
+    showFallback("LiveAvatar credits are unavailable. Continue with the text conversation below.");
+    ensureTextFallbackGreeting();
+    setSessionState("Text only", "disconnected");
+    setAvatarPickerLocked(false);
+    updateConversationLog({ channel: "text", status: "connected", fallbackAvailable: true });
+    logSessionEvent("text_only_conversation_started", { reason: "liveavatar_credits_exhausted" });
+    explainRiskButton.disabled = false;
+    textChatInput.focus();
+    return;
+  }
 
   try {
     explainRiskStatus.textContent = "Starting a LiveAvatar LITE conversation with the grounded risk educator…";
@@ -831,6 +868,7 @@ explainRiskButton.addEventListener("click", async () => {
     setSessionState("Unavailable", "disconnected");
     reconnectButton.classList.remove("hidden");
     showFallback("Video is unavailable. Continue with the text conversation below or try reconnecting later.");
+    ensureTextFallbackGreeting();
     updateConversationLog({ status: "voice_unavailable", fallbackAvailable: true });
     logSessionEvent("voice_conversation_start_failed", { error: message });
   } finally {

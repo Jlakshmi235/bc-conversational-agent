@@ -51,12 +51,22 @@ not minimize the result, but always pair it with an actionable next step
 in the same turn — briefly, not as a detailed screening overview.
 
 ## When used
-5-year risk ≥ 1.67%
+Application branch: `elevated`. Applies when 5-year risk ≥ 1.67% OR
+lifetime risk ≥ 20% — either condition alone is sufficient; the two
+thresholds are independent, not both required.
 
 ## Required content — keep this to one short paragraph
 - State the classification in plain language, attributed to the
   calculator, paired with "not a diagnosis" in the same sentence or the
-  next one.
+  next one. This is the first time the classification label itself is
+  spoken — turn 1 only covered the numeric comparison, not the label — so
+  state it plainly rather than as a recap. If the numeric comparison from
+  turn 1 pointed a different direction than this label (e.g., the numbers
+  were below the age-and-race comparison average but the label is
+  elevated), reconcile it per 00_scope-and-safety.md's rule rather than
+  letting it sound contradictory.
+- One sentence noting this is a snapshot, not fixed — it can change over
+  time as personal or family health history changes.
 - One sentence: this doesn't automatically mean a specific test,
   medication, or procedure — a healthcare professional can review the
   complete history and discuss whether more assessment makes sense.

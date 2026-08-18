@@ -26,6 +26,16 @@ export type KnowledgeTopic =
 // replies are ambiguous without this — "yes" means something different
 // after "did that make sense?" than after "want a few questions for your
 // doctor?" — and the app is the only thing that knows which one was asked.
+//
+// NOTE: "model_factors" is retained for backward compatibility but should
+// no longer fire under the current content design — 05_gail-limitations.md
+// and 02_understanding-and-concerns.md were revised to explain calculator
+// factors directly, without first asking "would you like to hear what it
+// includes, excludes, or both?" (that compound-offer pattern was removed
+// after it produced a confusing double question). inferPendingConfirmation
+// below will effectively never return "model_factors" against current
+// module content. Safe to remove this branch entirely in a future cleanup
+// once you've confirmed nothing still asks that offer question.
 export type PendingConfirmation = "understanding" | "doctor_questions" | "model_factors";
 
 export interface RiskResult {
@@ -138,23 +148,44 @@ export function inferPendingConfirmation(
   const text = assistantMessage.toLowerCase().replace(/[’]/g, "'");
   if (!text.trim()) return undefined;
 
+  // Broadened beyond a single literal phrase — the assistant's actual
+  // wording varies ("does that make sense", "does that help", "did that
+  // answer your question", etc.), so this checks for the question shape
+  // rather than one exact string.
   if (containsAny(text, [
     "does that make sense",
     "did that make sense",
     "does this make sense",
     "did that answer your question",
     "is that clear",
+    "does that help",
+    "does that clarify",
+    "make sense so far",
   ])) {
     return "understanding";
   }
+  // Broadened to match the actual offer wording used in the pathway
+  // modules ("a few questions you could bring to your next doctor visit" /
+  // "a few questions you could bring to that visit") — the original
+  // keyword list ("questions to bring") didn't match either phrasing and
+  // would have silently failed to set this state.
   if (containsAny(text, [
+    "questions you could bring",
     "questions to bring",
     "questions for your doctor",
     "questions for your clinician",
     "prepare questions",
+    "bring to your next doctor visit",
+    "bring to that visit",
+    "bring to your visit",
   ])) {
     return "doctor_questions";
   }
+  // See the PendingConfirmation type comment above — this branch should
+  // no longer trigger under the current module content, which explains
+  // calculator factors directly rather than offering a choice first.
+  // Retained only in case older module content or a future revision
+  // reintroduces that offer.
   if (containsAny(text, [
     "what the gail calculator looks at",
     "what the calculator looks at",
@@ -190,6 +221,10 @@ export function inferTopics(
     }
     if (NEGATIVE.test(text)) {
       topics.add("understanding");
+      // The understanding module directs a confused user straight into a
+      // brief explanation of what the calculator considers. Retrieve that
+      // content on the same turn instead of asking another question.
+      topics.add("risk_factors");
       return [...topics];
     }
   }
@@ -274,16 +309,34 @@ export function selectRiskBranch(risk: RiskResult): RiskBranch {
 export function formatRiskContext(risk: RiskResult, branch: RiskBranch): string {
   const f = risk.fiveYearRisk;
   const l = risk.lifetimeRisk;
+  const fiveYearRisk = Number(f?.individualPercent);
+  const fiveYearAverage = Number(f?.averagePercent);
+  const lifetimeRisk = Number(l?.individualPercent);
+  const lifetimeAverage = Number(l?.averagePercent);
+  const comparisonDirection = (individual: number, average: number) => {
+    if (!Number.isFinite(individual) || !Number.isFinite(average)) return "unknown";
+    if (individual < average) return "below";
+    if (individual > average) return "above";
+    return "equal to";
+  };
+  const thresholdReasons = [
+    fiveYearRisk >= 1.67 ? "5-year risk meets the 1.67% cutoff (about 1.7%)" : "",
+    lifetimeRisk >= 20 ? "lifetime risk meets the 20% cutoff" : "",
+  ].filter(Boolean);
   return [
     "# Application-supplied patient risk context",
     `Risk branch selected by the application: ${branch}`,
     `Model: ${risk.model ?? "NCI BCRAT / Gail model"}`,
     `5-year individual risk: ${f?.individualPercent ?? "unknown"}%`,
     `5-year population comparison: ${f?.averagePercent ?? "unknown"}%`,
+    `5-year comparison direction: ${comparisonDirection(fiveYearRisk, fiveYearAverage)}`,
     `5-year age range: ${f?.startAge ?? "unknown"}-${f?.endAge ?? "unknown"}`,
     `Lifetime individual risk: ${l?.individualPercent ?? "unknown"}%`,
     `Lifetime population comparison: ${l?.averagePercent ?? "unknown"}%`,
+    `Lifetime comparison direction: ${comparisonDirection(lifetimeRisk, lifetimeAverage)}`,
     `Lifetime age range: ${l?.startAge ?? "unknown"}-${l?.endAge ?? "unknown"}`,
+    `Application classification basis: ${thresholdReasons.length ? thresholdReasons.join(" and ") : "neither fixed cutoff is met"}`,
+    "If a risk value is below its population comparison but meets a fixed cutoff, explain that apparent mismatch using only the application classification basis above.",
     "The LLM must use this branch as supplied and must not recalculate or override it.",
   ].join("\n");
 }

@@ -184,6 +184,40 @@ in this knowledge base depends on. Delivery is what's constrained:
   spoken, not written — flat, even pacing on category labels; do not let
   emphasis, pausing, or tone imply more certainty or alarm than the words
   themselves carry.
+- **The label is an independent fact, never a derived one.** The
+  application supplies the branch directly — never phrase the label as
+  caused by the age-and-race comparison shown earlier ("because your
+  numbers are lower/higher than average, the calculator places this in
+  the [X] category"). State the comparison and the label as two separate
+  facts.
+- **Reconcile it explicitly, with the specific threshold, if the
+  comparison and the label point in different directions.** The
+  age-and-race comparison average is specific to the user's own
+  comparison group; the elevated/average label uses a fixed cutoff
+  applied the same way regardless of age or race — a 5-year individual
+  risk of 1.67% or higher, or a lifetime individual risk of 20% or
+  higher. Because baseline population risk rises with age, someone's
+  individual risk can be below their own comparison group's average and
+  still meet one of these fixed cutoffs (more likely for older users) —
+  or above the local average and still fall in the average category
+  (more likely for younger users). If the supplied numbers show this
+  pattern, don't let it sound contradictory or skip past it — name it
+  directly, once, in plain language, using the application-supplied
+  classification basis. If it's the 5-year figure that qualifies, say
+  this application uses a fixed 5-year cutoff of 1.67 percent (about 1.7
+  percent); if it's the lifetime figure, say this application uses a
+  fixed lifetime cutoff of 20 percent. Say "meets" or "at or above," not
+  "above," because a value exactly equal to either cutoff qualifies. Cite
+  only whichever cutoff actually applies to this user's numbers, not both
+  by default. For example: "this might sound a little confusing — your
+  number is a bit below the average for other
+  women of the same age and race, but this application uses a fixed
+  5-year cutoff of about 1.7 percent, and your estimate meets that cutoff,
+  regardless of how it compares to others of the same age and race, so
+  it's still classified
+  as elevated even though it's below that comparison average." If the
+  comparison direction and the label already agree, no reconciliation is
+  needed.
 
 Avoid fear, blame, jargon, and false reassurance more broadly.
 
