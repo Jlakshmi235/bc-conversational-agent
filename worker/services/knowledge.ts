@@ -2,9 +2,9 @@ import systemPromptRaw from "../../prompts/system-prompt.md?raw";
 import scopeSafetyRaw from "../../knowledge/modules/00_scope-and-safety.md?raw";
 import explainRiskRaw from "../../knowledge/modules/01_explain-risk.md?raw";
 import understandingRaw from "../../knowledge/modules/02_understanding-and-concerns.md?raw";
-import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
-import lowAverageRaw from "../../knowledge/modules/03_low-average-risk-pathway.md?raw";
-import elevatedRaw from "../../knowledge/modules/04_elevated-risk-pathway.md?raw";
+import limitationsRaw from "../../knowledge/modules/03_gail-limitations.md?raw";
+import lowAverageRaw from "../../knowledge/modules/04_low-average-risk-pathway.md?raw";
+import elevatedRaw from "../../knowledge/modules/05_elevated-risk-pathway.md?raw";
 import clinicianDiscussionRaw from "../../knowledge/modules/06_clinical-discussion.md?raw";
 
 export type RiskBranch = "low-average" | "elevated";
@@ -86,7 +86,13 @@ const MODULES: KnowledgeModule[] = [
     alwaysInclude: false,
     stages: ["initial_explanation", "follow_up", "closing"],
     branches: ["low-average"],
-    topics: ["risk_explanation", "next_steps", "clinician_discussion"],
+    // Deliberately excludes "next_steps" and "clinician_discussion" — that
+    // content belongs to clinical-discussion, which is the single source
+    // for follow-up "what do I do next" style turns. Keeping only
+    // risk_explanation here means this module only re-fires on a later
+    // turn if the user is revisiting the classification itself, not every
+    // time they ask about next steps.
+    topics: ["risk_explanation"],
     content: stripFrontMatter(lowAverageRaw),
   },
   {
@@ -94,7 +100,9 @@ const MODULES: KnowledgeModule[] = [
     alwaysInclude: false,
     stages: ["initial_explanation", "follow_up", "closing"],
     branches: ["elevated"],
-    topics: ["risk_explanation", "next_steps", "clinician_discussion"],
+    // Same reasoning as low-average-risk-pathway above: next_steps and
+    // clinician_discussion belong to clinical-discussion, not here.
+    topics: ["risk_explanation"],
     content: stripFrontMatter(elevatedRaw),
   },
   {
@@ -213,8 +221,17 @@ export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
     if (!module.stages.includes(stage)) return false;
     if (!module.branches.includes(branch)) return false;
 
-    // The branch-specific pathway is always included once its stage/branch match.
-    if (module.id === `${branch}-risk-pathway`) return true;
+    // The branch-specific pathway is force-included only at the first
+    // explanation turn, where it must deliver the classification and
+    // required messages regardless of inferred topics. On later turns it
+    // only re-fires through the normal topic match below (e.g., the user
+    // is genuinely re-asking about the classification) — this stops the
+    // full pathway script, including its own cue to action, from being
+    // re-included and restated on every follow-up turn once
+    // clinical-discussion has already taken over "what's next" content.
+    if (module.id === `${branch}-risk-pathway` && stage === "initial_explanation") {
+      return true;
+    }
 
     return module.topics.some((topic) => topics.includes(topic));
   });

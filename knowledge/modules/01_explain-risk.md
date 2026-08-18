@@ -3,11 +3,13 @@
 ## Theory Tags
 - PMT: perceived vulnerability / threat appraisal
 - FTT: verbatim and gist representations for risk comprehension
-- MI: provide neutrally, ask before explaining, check understanding after
-  the explanation
+- MI: provide neutrally, check understanding after the explanation
 
 Note: perceived susceptibility is tagged under PMT only, per the precedence
-rule in 00_scope-and-safety.md.
+rule in 00_scope-and-safety.md. This module does not ask permission before
+explaining — the opening turn's "ready to start?" already secured consent
+for this first explanation. Proceed directly into it once retrieved at the
+initial_explanation stage.
 
 ## FTT use
 - Present the supplied numerical estimate accurately as the verbatim
