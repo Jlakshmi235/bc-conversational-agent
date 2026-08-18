@@ -232,9 +232,14 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
       body: JSON.stringify({
         model: env.GROQ_MODEL || "openai/gpt-oss-120b",
         temperature: 0.2,
-        max_tokens: 320,
+        // Leave enough room to finish the explanation. The previous 320-token
+        // cap could stop Groq in the middle of a sentence.
+        max_tokens: 700,
         messages: [
-          { role: "system", content: retrieval.assembledSystemPrompt },
+          {
+            role: "system",
+            content: `${retrieval.assembledSystemPrompt}\n\n# Response length\nKeep the answer concise, normally under 500 tokens. Always finish the current sentence and closing thought.`,
+          },
           ...cleanMessages,
         ],
       }),
