@@ -288,7 +288,7 @@ async function createLiteLiveAvatarSession(request: Request, env: Env): Promise<
         avatar_key: avatarKey,
         system_prompt: systemPrompt,
         opening_text:
-          "Hi, I’m your virtual health educator. I can help explain your breast cancer risk results. Would you like to discuss them with me?",
+          "Hi, I'm your virtual health educator. I'm here to help you understand your breast cancer risk results — this is not a diagnosis, and I'm not a clinician. Ready to start?",
       }),
     });
     const payload = (await upstream.json().catch(() => null)) as any;

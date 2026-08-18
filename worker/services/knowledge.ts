@@ -2,9 +2,9 @@ import systemPromptRaw from "../../prompts/system-prompt.md?raw";
 import scopeSafetyRaw from "../../knowledge/modules/00_scope-and-safety.md?raw";
 import explainRiskRaw from "../../knowledge/modules/01_explain-risk.md?raw";
 import understandingRaw from "../../knowledge/modules/02_understanding-and-concerns.md?raw";
+import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
 import lowAverageRaw from "../../knowledge/modules/03_low-average-risk-pathway.md?raw";
 import elevatedRaw from "../../knowledge/modules/04_elevated-risk-pathway.md?raw";
-import limitationsRaw from "../../knowledge/modules/05_gail-limitations.md?raw";
 import clinicianDiscussionRaw from "../../knowledge/modules/06_clinical-discussion.md?raw";
 
 export type RiskBranch = "low-average" | "elevated";
@@ -74,6 +74,14 @@ const MODULES: KnowledgeModule[] = [
     content: stripFrontMatter(understandingRaw),
   },
   {
+    id: "gail-limitations",
+    alwaysInclude: false,
+    stages: ["follow_up"],
+    branches: ["low-average", "elevated"],
+    topics: ["model_limitations", "risk_factors", "family_history"],
+    content: stripFrontMatter(limitationsRaw),
+  },
+  {
     id: "low-average-risk-pathway",
     alwaysInclude: false,
     stages: ["initial_explanation", "follow_up", "closing"],
@@ -88,14 +96,6 @@ const MODULES: KnowledgeModule[] = [
     branches: ["elevated"],
     topics: ["risk_explanation", "next_steps", "clinician_discussion"],
     content: stripFrontMatter(elevatedRaw),
-  },
-  {
-    id: "gail-limitations",
-    alwaysInclude: false,
-    stages: ["follow_up"],
-    branches: ["low-average", "elevated"],
-    topics: ["model_limitations", "risk_factors", "family_history"],
-    content: stripFrontMatter(limitationsRaw),
   },
   {
     id: "clinical-discussion",
@@ -156,9 +156,12 @@ export function selectRiskBranch(risk: RiskResult): RiskBranch {
     );
   }
 
-  // Presumably average only when BOTH conditions are met.
-  // Otherwise the application classifies the result as elevated.
-  if (lifetimeRisk < 20 && fiveYearRisk < 1.7) {
+  // Low-average only when BOTH conditions are met (lifetime < 20% AND
+  // 5-year < 1.67%). Otherwise elevated. 1.67% matches the standard
+  // BCRAT/Gail 5-year elevated-risk threshold used consistently across
+  // every knowledge module and the system prompt — keep this in sync if
+  // either changes.
+  if (lifetimeRisk < 20 && fiveYearRisk < 1.67) {
     return "low-average";
   }
 
