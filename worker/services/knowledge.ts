@@ -17,7 +17,15 @@ export type KnowledgeTopic =
   | "risk_factors"
   | "family_history"
   | "next_steps"
-  | "clinician_discussion";
+  | "clinician_discussion"
+  | "confirmed_understanding";
+
+// The app must track which confirmation question the assistant most
+// recently asked and pass it back on the next turn. Plain "yes"/"no"
+// replies are ambiguous without this — "yes" means something different
+// after "did that make sense?" than after "want a few questions for your
+// doctor?" — and the app is the only thing that knows which one was asked.
+export type PendingConfirmation = "understanding" | "doctor_questions";
 
 export interface RiskResult {
   model?: string;
@@ -84,25 +92,20 @@ const MODULES: KnowledgeModule[] = [
   {
     id: "low-average-risk-pathway",
     alwaysInclude: false,
-    stages: ["initial_explanation", "follow_up", "closing"],
+    // No "initial_explanation" — this module must not fire until the user
+    // has confirmed they understood the risk explanation. See
+    // confirmed_understanding below.
+    stages: ["follow_up", "closing"],
     branches: ["low-average"],
-    // Deliberately excludes "next_steps" and "clinician_discussion" — that
-    // content belongs to clinical-discussion, which is the single source
-    // for follow-up "what do I do next" style turns. Keeping only
-    // risk_explanation here means this module only re-fires on a later
-    // turn if the user is revisiting the classification itself, not every
-    // time they ask about next steps.
-    topics: ["risk_explanation"],
+    topics: ["risk_explanation", "confirmed_understanding"],
     content: stripFrontMatter(lowAverageRaw),
   },
   {
     id: "elevated-risk-pathway",
     alwaysInclude: false,
-    stages: ["initial_explanation", "follow_up", "closing"],
+    stages: ["follow_up", "closing"],
     branches: ["elevated"],
-    // Same reasoning as low-average-risk-pathway above: next_steps and
-    // clinician_discussion belong to clinical-discussion, not here.
-    topics: ["risk_explanation"],
+    topics: ["risk_explanation", "confirmed_understanding"],
     content: stripFrontMatter(elevatedRaw),
   },
   {
@@ -119,11 +122,49 @@ function containsAny(text: string, terms: string[]): boolean {
   return terms.some((term) => text.includes(term));
 }
 
-export function inferTopics(userMessage = ""): KnowledgeTopic[] {
-  const text = userMessage.toLowerCase();
+// Whole-message match only — deliberately not a substring check, so a
+// longer message that happens to contain "yes" somewhere isn't swept into
+// this branch. Bare confirmations are short by nature.
+const AFFIRMATIVE = /^(yes|yeah|yep|yup|sure|ok|okay|got it|that makes sense|makes sense|understood|i understand|i think so|that helps|sounds good)[.,!]?$/;
+const NEGATIVE = /^(no|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
+
+export function inferTopics(
+  userMessage = "",
+  pendingConfirmation?: PendingConfirmation
+): KnowledgeTopic[] {
+  const text = userMessage.toLowerCase().trim();
   const topics = new Set<KnowledgeTopic>();
 
-  if (!text.trim()) topics.add("risk_explanation");
+  if (!text) {
+    topics.add("risk_explanation");
+    return [...topics];
+  }
+
+  // Disambiguate bare "yes"/"no" using what the assistant just asked.
+  // Without pendingConfirmation, "yes" is meaningless on its own — it
+  // means "I understood, move to my results" after the risk explanation,
+  // but "give me the doctor questions" after the pathway module's offer.
+  if (pendingConfirmation === "understanding") {
+    if (AFFIRMATIVE.test(text)) {
+      topics.add("confirmed_understanding");
+      return [...topics];
+    }
+    if (NEGATIVE.test(text)) {
+      topics.add("understanding");
+      return [...topics];
+    }
+  }
+  if (pendingConfirmation === "doctor_questions") {
+    if (AFFIRMATIVE.test(text)) {
+      topics.add("clinician_discussion");
+      return [...topics];
+    }
+    if (NEGATIVE.test(text)) {
+      // User declined; nothing further to retrieve — let scope-and-safety
+      // (always included) close things out.
+      return [];
+    }
+  }
 
   if (containsAny(text, ["what does", "mean", "explain", "percentage", "percent", "average", "risk"])) {
     topics.add("risk_explanation");
@@ -198,6 +239,10 @@ export interface RetrievalInput {
   stage?: ConversationStage;
   userMessage?: string;
   topics?: KnowledgeTopic[];
+  // Set this to whichever confirmation question the assistant's previous
+  // turn ended with, so a bare "yes"/"no" reply resolves correctly. Leave
+  // undefined on turns that didn't end with a yes/no question.
+  pendingConfirmation?: PendingConfirmation;
 }
 
 export interface RetrievalResult {
@@ -214,24 +259,14 @@ export interface RetrievalResult {
 export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
   const stage = input.stage ?? "initial_explanation";
   const branch = selectRiskBranch(input.riskResult);
-  const topics = input.topics?.length ? input.topics : inferTopics(input.userMessage);
+  const topics = input.topics?.length
+    ? input.topics
+    : inferTopics(input.userMessage, input.pendingConfirmation);
 
   const selected = MODULES.filter((module) => {
     if (module.alwaysInclude) return true;
     if (!module.stages.includes(stage)) return false;
     if (!module.branches.includes(branch)) return false;
-
-    // The branch-specific pathway is force-included only at the first
-    // explanation turn, where it must deliver the classification and
-    // required messages regardless of inferred topics. On later turns it
-    // only re-fires through the normal topic match below (e.g., the user
-    // is genuinely re-asking about the classification) — this stops the
-    // full pathway script, including its own cue to action, from being
-    // re-included and restated on every follow-up turn once
-    // clinical-discussion has already taken over "what's next" content.
-    if (module.id === `${branch}-risk-pathway` && stage === "initial_explanation") {
-      return true;
-    }
 
     return module.topics.some((topic) => topics.includes(topic));
   });

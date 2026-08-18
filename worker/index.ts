@@ -28,6 +28,16 @@ function requiredEnv(value: string | undefined, name: string) {
   return value;
 }
 
+function groqRetryDelayMs(response: Response, message = "") {
+  const retryAfter = Number(response.headers.get("retry-after"));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return Math.min(Math.ceil(retryAfter * 1_000), 30_000);
+  }
+  const match = message.match(/try again in\s+([\d.]+)s/i);
+  if (!match) return 0;
+  return Math.min(Math.ceil(Number(match[1]) * 1_000), 30_000);
+}
+
 function summarizeRisk(risk?: RiskResult) {
   if (!risk) return null;
   return {
@@ -211,6 +221,10 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
       role: message.role,
       content: message.content,
     }));
+    // The risk result and retrieved clinical grounding are supplied separately,
+    // so the entire transcript is not needed on every request. Limiting history
+    // prevents old long answers from exhausting Groq's tokens-per-minute quota.
+    const recentMessages = cleanMessages.slice(-6);
 
     const lastUserMessage = [...cleanMessages]
       .reverse()
@@ -223,7 +237,7 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
       userMessage: lastUserMessage,
     });
 
-    const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const groqRequest = {
       method: "POST",
       headers: {
         Authorization: `Bearer ${requiredEnv(env.GROQ_API_KEY, "GROQ_API_KEY")}`,
@@ -234,16 +248,26 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
         temperature: 0.2,
         // Leave enough room to finish the explanation. The previous 320-token
         // cap could stop Groq in the middle of a sentence.
-        max_tokens: 700,
+        max_tokens: 550,
         messages: [
           {
             role: "system",
             content: `${retrieval.assembledSystemPrompt}\n\n# Response length\nKeep the answer concise, normally under 500 tokens. Always finish the current sentence and closing thought.`,
           },
-          ...cleanMessages,
+          ...recentMessages,
         ],
       }),
-    });
+    };
+
+    let upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", groqRequest);
+    if (upstream.status === 429) {
+      const rateLimitPayload = (await upstream.clone().json().catch(() => null)) as any;
+      const delayMs = groqRetryDelayMs(upstream, rateLimitPayload?.error?.message || "");
+      if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", groqRequest);
+      }
+    }
 
     const payload = (await upstream.json().catch(() => null)) as any;
     if (!upstream.ok) {
