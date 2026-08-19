@@ -1,14 +1,7 @@
 # Conversational Agent for Breast Cancer Risk Communication
 
-## Project summary
-
-BC Risk Educator is a responsive web application that combines a breast-cancer risk calculator with a conversational AI health educator. It is designed to make numerical risk estimates easier to understand, reduce unnecessary worry, and encourage an appropriate next step when a result is elevated.
-
-After completing the assessment, a user receives estimated five-year and lifetime breast-cancer risk results and can discuss them with a real-time, on-screen avatar. The conversation explains the estimates in plain language, compares them with age-based averages, and follows a risk-specific pathway: users with low or average risk receive reassurance and general prevention guidance, while users with elevated risk are encouraged to discuss the result with a qualified healthcare professional. Conversations are intended to remain focused and brief, typically lasting two to five minutes.
-
-Responses are grounded in a curated evidence base containing clinical guidance, reputable patient-education resources, and relevant behavioral-science principles. The educator does not diagnose, predict an individual's outcome, or present itself as a clinician. Visible consent and medical disclaimers reinforce these boundaries. If video, audio, microphone access, LiveAvatar, or the voice pipeline is unavailable, the same grounded conversation remains accessible through the text interface.
-
-The web application and deterministic retrieval layer run on Cloudflare Workers. The real-time avatar uses LiveAvatar **LITE mode**, a separate Python LiveKit agent, Groq for language generation, and configurable speech-to-text and text-to-speech services. The application also supports transcripts, session metadata, downloadable session JSON, and saved risk estimates for later review.
+### Summary
+This is a responsive web application that combines a breast-cancer risk calculator with a conversational AI agent. After completing the assessment, a user receives estimated five-year and lifetime breast-cancer risk results and can discuss them with a real-time, on-screen avatar. The conversation explains the estimates in plain language, compares them with age-based averages, and follows a risk-specific pathway: users with low or average risk receive reassurance and general prevention guidance, while users with elevated risk are encouraged to discuss the result with a qualified healthcare professional. 
 
 ## Architecture
 
@@ -23,6 +16,8 @@ The calculator, results, deterministic medical-risk retrieval, text fallback, tr
 ## Web application: local development
 
 ```bash
+git clone https://github.com/Jlakshmi235/bc-conversational-agent.git
+cd bc-conversational-agent
 npm install
 cp .dev.vars.example .dev.vars
 npm run dev
@@ -42,11 +37,11 @@ LITE_AGENT_SHARED_SECRET=<shared agent service secret>
 
 Open `http://localhost:5173/calculator/`.
 
-## LITE agent: local development
+## Voice agent: local development
 
 Create a LiveKit Cloud project for the STT/TTS inference gateway, then follow [`agent-service/README.md`](./agent-service/README.md).
 
-For local development, run the agent service alongside Vite:
+For local development:
 
 ```bash
 cd agent-service
@@ -58,41 +53,11 @@ cp .env.example .env.local
 
 The same value must be used for:
 
-- Cloudflare/Vite: `LITE_AGENT_SHARED_SECRET`
+- Cloudflare: `LITE_AGENT_SHARED_SECRET`
 - Agent service: `AGENT_SHARED_SECRET`
 
 The agent's `LLM_PROXY_BASE_URL` should be `http://localhost:5173/openai/v1` locally and the deployed Cloudflare URL plus `/openai/v1` in production. Its `LLM_PROXY_TOKEN` must match the Worker's `LLM_PROXY_TOKEN`.
 
-## Cloudflare deployment
-
-Configure these Worker secrets/variables:
-
-- `GROQ_API_KEY`
-- `GROQ_MODEL`
-- `LLM_PROXY_TOKEN`
-- `LIVEAVATAR_API_KEY` (used by the credit-balance endpoint)
-- `LIVEAVATAR_AGENT_URL` (public HTTPS URL of the Python service)
-- `LITE_AGENT_SHARED_SECRET`
-
-Then deploy:
-
-```bash
-npm run deploy
-```
-
-`keep_vars` is enabled in `wrangler.jsonc`, so dashboard-managed secrets are preserved.
-
-## Grounding and privacy
-
-The Worker retains the existing deterministic retrieval behavior:
-
-- `scope-and-safety` is always included.
-- The application selects the low/average or elevated branch from the calculated result.
-- Follow-up knowledge modules are selected from the current user message.
-- The Python agent calls the Worker's OpenAI-compatible proxy for every turn.
-- The Worker applies risk-specific retrieval and then forwards the request to Groq.
-
-Risk context is sent only to the configured agent service and LLM proxy. Keep both shared secrets private, use HTTPS in production, avoid logging prompts or transcripts, and configure an appropriate retention policy for any production healthcare deployment.
 
 ## Session behavior
 
@@ -105,13 +70,3 @@ Risk context is sent only to the configured agent service and LLM proxy. Keep bo
 - Text fallback: remains available through `POST /api/chat`
 - Ending a session: the browser disconnects and the Worker asks the agent service to stop its pipeline and LiveAvatar session
 
-## Verification
-
-```bash
-npm run build
-
-cd agent-service
-.venv/bin/ruff check src tests
-.venv/bin/python -m compileall -q src
-.venv/bin/pytest -q
-```
