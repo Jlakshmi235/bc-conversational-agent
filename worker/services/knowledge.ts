@@ -475,6 +475,13 @@ export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
     .join("\n");
 
   const systemPrompt = stripFrontMatter(systemPromptRaw);
+  const followUpContinuityInstruction = stage !== "initial_explanation"
+    && !topics.includes("risk_explanation")
+    ? [
+        "# Follow-up continuity",
+        "Continue from the user's latest answer instead of restarting the explanation. Do not repeat the 5-year or lifetime percentages, population comparisons, natural-frequency framing, or the full risk-category explanation unless the user explicitly asks to hear the numbers or explanation again. Answer the current question or advance to the next requested step. Do not repeat an offer question the user has already accepted.",
+      ]
+    : [];
   const assembledSystemPrompt = [
     systemPrompt,
     riskContext,
@@ -482,6 +489,7 @@ export function retrieveKnowledge(input: RetrievalInput): RetrievalResult {
     knowledgeContext,
     "# Retrieval instruction",
     "Answer only from the application risk context and retrieved modules above. If the requested information is not supported there, say that this educator does not have enough grounded information and redirect appropriately.",
+    ...followUpContinuityInstruction,
     ...(topics.length === 0 && input.pendingConfirmation
       ? [
           "# Conversation state",

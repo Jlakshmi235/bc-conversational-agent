@@ -143,6 +143,10 @@ export async function proxyChatCompletion(request: Request, env: GroqProxyEnv): 
   // the application state needed for deterministic retrieval.
   const riskResult = extractTaggedJson<RiskResult>(body.messages, "app_risk_json");
   const taggedStage = extractTaggedText(body.messages, "conversation_stage") as ConversationStage | null;
+  const explicitPreviousAssistant = extractTaggedText(
+    body.messages,
+    "previous_assistant_message"
+  );
   const stage = taggedStage || inferStage(body.messages);
 
   let messages = body.messages;
@@ -153,7 +157,9 @@ export async function proxyChatCompletion(request: Request, env: GroqProxyEnv): 
       riskResult,
       stage: ["initial_explanation", "follow_up", "closing"].includes(stage) ? stage : "follow_up",
       userMessage: getLastUserMessage(body.messages),
-      pendingConfirmation: inferPendingConfirmation(getLastAssistantMessage(body.messages)),
+      pendingConfirmation: inferPendingConfirmation(
+        explicitPreviousAssistant || getLastAssistantMessage(body.messages)
+      ),
     });
 
     messages = [
