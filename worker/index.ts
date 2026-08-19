@@ -239,6 +239,11 @@ async function groundedTextChat(request: Request, env: Env): Promise<Response> {
       riskResult: body.riskResult,
       stage: body.stage ?? "follow_up",
       userMessage: lastUserMessage,
+      // On the first substantive turn, the user has already passed the
+      // page consent gate and/or answered the fixed greeting. Always load
+      // the risk explanation instead of trying to keyword-classify a bare
+      // "yes" as a follow-up topic.
+      topics: body.stage === "initial_explanation" ? ["risk_explanation"] : undefined,
       pendingConfirmation: inferPendingConfirmation(previousAssistantMessage),
     });
 

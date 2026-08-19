@@ -103,12 +103,6 @@ const MODULES: KnowledgeModule[] = [
   {
     id: "low-average-risk-pathway",
     alwaysInclude: false,
-    // No "initial_explanation" — this module must not fire until the user
-    // has confirmed they understood the risk explanation. See
-    // confirmed_understanding below. screening_guidance lets this module
-    // re-fire later in the conversation if the user separately asks about
-    // screening or treatment (its content includes the USPSTF general
-    // guideline, gated behind the individualization caveat).
     stages: ["follow_up", "closing"],
     branches: ["low-average"],
     topics: ["confirmed_understanding", "screening_guidance"],
@@ -181,17 +175,27 @@ export function inferPendingConfirmation(
   ])) {
     return "doctor_questions";
   }
-  // See the PendingConfirmation type comment above — this branch should
-  // no longer trigger under the current module content, which explains
-  // calculator factors directly rather than offering a choice first.
-  // Retained only in case older module content or a future revision
-  // reintroduces that offer.
+  // Broadened again — a real transcript showed the assistant offering
+  // "would you like me to explain how the risk calculator works?" which
+  // didn't match any of the phrases below, so the follow-up "yes" fell
+  // through to generic keyword matching instead of routing to the
+  // calculator-factors content. This is exactly the case this branch
+  // exists for, so it needs to actually catch the assistant's natural
+  // phrasing, not just the narrower original wording.
   if (containsAny(text, [
     "what the gail calculator looks at",
     "what the calculator looks at",
     "factors it does include",
     "ones it doesn't fully capture",
     "one of those factors",
+    "explain how the risk calculator works",
+    "explain how it works",
+    "how the calculator works",
+    "how the risk calculator works",
+    "how this is calculated",
+    "how it's calculated",
+    "tell you about the calculator",
+    "tell you more about the calculator",
   ])) {
     return "model_factors";
   }
@@ -257,7 +261,13 @@ export function inferTopics(
   if (containsAny(text, ["worried", "worry", "scared", "afraid", "anxious", "concerned", "concern"])) {
     topics.add("concerns");
   }
-  if (containsAny(text, ["limitation", "accurate", "accuracy", "leave out", "include", "model", "gail", "bcrat"])) {
+  // Added "calculator", "how does it work", "how is it calculated", "what
+  // goes into" — these are the natural, expected phrasings now that the
+  // assistant itself always calls the tool "the risk calculator." The
+  // original list only had the pre-rename terms ("model", "gail",
+  // "bcrat"), which a user has no particular reason to say back, since
+  // they only ever hear "the risk calculator" from the assistant.
+  if (containsAny(text, ["limitation", "accurate", "accuracy", "leave out", "include", "model", "gail", "bcrat", "calculator", "how does it work", "how it works", "how is it calculated", "how is this calculated", "what goes into", "how was this calculated"])) {
     topics.add("model_limitations");
   }
   if (containsAny(text, ["factor", "why is my risk", "why higher", "why lower", "biopsy", "period", "birth", "race", "ethnicity"])) {
@@ -319,10 +329,54 @@ export function formatRiskContext(risk: RiskResult, branch: RiskBranch): string 
     if (individual > average) return "above";
     return "equal to";
   };
+  // Precomputed natural-frequency values for the 5-year figure only, per
+  // 01_explain-risk.md's natural-frequency framing rule. Computed here
+  // rather than left to the model for the same reason comparisonDirection
+  // and thresholdReasons are: percent-to-frequency conversion and
+  // rounding is exactly the kind of arithmetic an LLM can get wrong in a
+  // live spoken turn, and there's no reason to risk it when the app
+  // already has the raw numbers. Uses "out of 1,000," not "out of 100" —
+  // 5-year figures are usually small (often under 5%), and 100 as a
+  // denominator frequently rounds two different percentages to the same
+  // whole number (e.g., 1.9% and 2.2% both round to "2 out of 100"),
+  // erasing the exact comparison the gist depends on. Both the individual
+  // and average values use the same denominator and rounding method, per
+  // Paling's consistent-denominator principle, so the comparison stays
+  // meaningful. Deliberately NOT computed for the lifetime figure —
+  // lifetime percentages are usually large enough to be intuitive without
+  // conversion, and 01_explain-risk.md explicitly scopes this to 5-year
+  // only to keep the turn from running long.
+  const toPerThousand = (percent: number): number | null => {
+    if (!Number.isFinite(percent)) return null;
+    return Math.round((percent / 100) * 1000);
+  };
+  const fiveYearIndividualPerThousand = toPerThousand(fiveYearRisk);
+  const fiveYearAveragePerThousand = toPerThousand(fiveYearAverage);
+  const fiveYearFrequenciesEqual =
+    fiveYearIndividualPerThousand !== null &&
+    fiveYearAveragePerThousand !== null &&
+    fiveYearIndividualPerThousand === fiveYearAveragePerThousand;
+  const fiveYearMeets = fiveYearRisk >= 1.67;
+  const lifetimeMeets = lifetimeRisk >= 20;
   const thresholdReasons = [
-    fiveYearRisk >= 1.67 ? "5-year risk meets the 1.67% cutoff (about 1.7%)" : "",
-    lifetimeRisk >= 20 ? "lifetime risk meets the 20% cutoff" : "",
+    fiveYearMeets ? "5-year risk meets the 1.67% cutoff (about 1.7%)" : "",
+    lifetimeMeets ? "lifetime risk meets the 20% cutoff" : "",
   ].filter(Boolean);
+  // A mismatch is only when a comparison direction is "below" (or "equal
+  // to") while the branch is elevated, or "above" while the branch is
+  // low-average — i.e., the plain-language gist and the fixed-cutoff
+  // label would otherwise sound contradictory. Most elevated results do
+  // NOT have a mismatch (the individual number is usually above the
+  // comparison average too) — the specific cutoff percentage should only
+  // ever be spoken in the mismatch case, never as routine narration of
+  // why something is elevated.
+  const fiveYearMismatch = branch === "elevated"
+    ? comparisonDirection(fiveYearRisk, fiveYearAverage) !== "above"
+    : comparisonDirection(fiveYearRisk, fiveYearAverage) === "above" && fiveYearMeets;
+  const lifetimeMismatch = branch === "elevated"
+    ? comparisonDirection(lifetimeRisk, lifetimeAverage) !== "above"
+    : comparisonDirection(lifetimeRisk, lifetimeAverage) === "above" && lifetimeMeets;
+  const hasMismatch = (fiveYearMeets && fiveYearMismatch) || (lifetimeMeets && lifetimeMismatch);
   return [
     "# Application-supplied patient risk context",
     `Risk branch selected by the application: ${branch}`,
@@ -330,13 +384,17 @@ export function formatRiskContext(risk: RiskResult, branch: RiskBranch): string 
     `5-year individual risk: ${f?.individualPercent ?? "unknown"}%`,
     `5-year population comparison: ${f?.averagePercent ?? "unknown"}%`,
     `5-year comparison direction: ${comparisonDirection(fiveYearRisk, fiveYearAverage)}`,
+    `5-year individual risk (natural frequency, precomputed): ${fiveYearIndividualPerThousand ?? "unknown"} out of 1,000`,
+    `5-year population comparison (natural frequency, precomputed): ${fiveYearAveragePerThousand ?? "unknown"} out of 1,000`,
     `5-year age range: ${f?.startAge ?? "unknown"}-${f?.endAge ?? "unknown"}`,
     `Lifetime individual risk: ${l?.individualPercent ?? "unknown"}%`,
     `Lifetime population comparison: ${l?.averagePercent ?? "unknown"}%`,
     `Lifetime comparison direction: ${comparisonDirection(lifetimeRisk, lifetimeAverage)}`,
     `Lifetime age range: ${l?.startAge ?? "unknown"}-${l?.endAge ?? "unknown"}`,
-    `Application classification basis: ${thresholdReasons.length ? thresholdReasons.join(" and ") : "neither fixed cutoff is met"}`,
-    "If a risk value is below its population comparison but meets a fixed cutoff, explain that apparent mismatch using only the application classification basis above.",
+    `Application classification basis (internal use only — see instruction below): ${thresholdReasons.length ? thresholdReasons.join(" and ") : "neither fixed cutoff is met"}`,
+    `Does this result need reconciliation language: ${hasMismatch ? "YES — comparison direction and label disagree" : "NO — comparison direction and label already agree"}`,
+    "IMPORTANT: the 'classification basis' line above and the specific cutoff percentages (1.67%, 20%) are for your own grounding only. Do NOT speak the specific cutoff number to the user unless the 'reconciliation' line above says YES. If it says NO, simply state the classification plainly (e.g., 'based on these results, the calculator places this in the elevated-risk category') without mentioning 1.67%, 1.7%, or 20% at all — citing the internal cutoff in the normal, non-contradictory case is incorrect and should not happen.",
+    `IMPORTANT: when stating the 5-year natural-frequency framing per 01_explain-risk.md, use the precomputed "out of 1,000" values above exactly as given — do not calculate this conversion yourself, and do not reduce it to a "1 in X" ratio. Do not apply this conversion to the lifetime figure. ${fiveYearFrequenciesEqual ? "Note: the individual and average values round to the same whole number at this scale — state both counts as given rather than forcing an artificial distinction." : ""}`,
     "The LLM must use this branch as supplied and must not recalculate or override it.",
   ].join("\n");
 }

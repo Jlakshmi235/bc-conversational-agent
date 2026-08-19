@@ -19,6 +19,18 @@ here specifically.
 ## Spoken delivery format
 No markdown. Flowing sentences suitable for speech.
 
+## If this module is retrieved, use it — don't fall back to earlier numbers
+When the user asks about the calculator itself (how it works, what it
+looks at, what calculator was used), answer from this module's content,
+not by re-stating the risk percentages or classification already given
+earlier in the conversation. Those numbers already had their own turn;
+repeating them here doesn't answer a question about the tool's mechanics
+and violates the "don't restate already-delivered content" rule. If this
+module isn't in front of you for some reason when the user clearly asked
+about the calculator's mechanics, say you don't have that grounded
+information right now rather than answering from general knowledge or
+falling back to the numbers.
+
 ## Deliver this in turns — do not dump it all at once, and don't stack offers
 This is the most detail-heavy module in the knowledge base. Never read the
 full included/excluded factor list in one turn.
@@ -73,10 +85,20 @@ full included/excluded factor list in one turn.
 Neutral context.
 
 ## Included factors (default response to "what does it look at")
-The risk calculator uses: age; age at first menstrual period; age at
-first live birth; benign breast biopsy history; atypical hyperplasia;
-number of first-degree relatives with breast cancer; and race or
-ethnicity. Summarize in plain sentences, not a read-aloud list.
+The risk calculator uses exactly these factors — do not add, extend, or
+supplement this list with anything else, even something that sounds
+plausible or that you recall about the Gail model from general training
+knowledge. If a detail isn't in this list, it is not part of what this
+tool uses, and stating it would be a grounding violation: age; age at
+first menstrual period; age at first live birth; benign breast biopsy
+history; atypical hyperplasia; number of first-degree relatives with
+breast cancer; and race or ethnicity. Summarize in plain sentences, not a
+read-aloud list. In particular: this tool does NOT ask about relatives'
+ages at diagnosis — that's explicitly listed as a factor NOT captured,
+directly below. Do not say anything like "whether relatives were
+diagnosed before a certain age" as if it were an included factor — it
+isn't, and saying so is a direct contradiction of this module's own next
+section.
 
 ## Factors not fully represented (only when the user explicitly asks what's missing or left out)
 Not fully captured: relatives beyond first-degree, including paternal-side
@@ -92,6 +114,22 @@ This tool is not a diagnostic test. It may not be appropriate for people
 with prior invasive breast cancer, DCIS, or LCIS; certain hereditary
 cancer syndromes; or histories of chest radiation. Mention this only if
 relevant to what the user asked.
+
+## Population-performance limitation (only when the user explicitly asks about accuracy, fairness, or how well it works for people like them)
+Do not name any specific race, ethnicity, or ancestry group — this
+applies even here, where the topic is the calculator's own limitation,
+not the user's own comparison group (see 00_scope-and-safety.md and
+01_explain-risk.md, which already prohibit naming a specific
+race/ethnicity in any context). State this generically: the risk
+calculator was developed using research data that has not equally
+represented every population group, so it may perform less consistently
+for some groups than others. This is a limitation of the underlying
+research base, not something caused by anything about the user
+personally, and it's a reason — alongside the other items in this
+module — that a healthcare professional reviewing the complete picture
+is valuable. Do not speculate about whether this makes the user's own
+estimate more or less accurate; that would require clinical judgment
+this tool cannot provide.
 
 ## Closing message (only if limitations were explained — step 3)
 Different risk calculators are designed for different clinical
@@ -112,6 +150,8 @@ No diagnosis, no causal attribution.
 - NCI About BCRAT (NCI, 2026)
 - Breast Cancer Risk Assessments: What to Know (UT MD Anderson Cancer
   Center, 2026)
+- How Breast Cancer Risk Assessment Tools Work (National Cancer
+  Institute, 2024)
 
 ## Disclaimer
 This information is educational. It is not a diagnosis, treatment plan, or

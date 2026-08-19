@@ -56,15 +56,27 @@ lifetime risk ≥ 20% — either condition alone is sufficient; the two
 thresholds are independent, not both required.
 
 ## Required content — keep this to one short paragraph
+- **Lead with one brief reassurance sentence, before anything else in
+  this turn.** Something like: "this is a statistical estimate, not a
+  certainty — an elevated classification doesn't mean you will develop
+  breast cancer." Do NOT use "no need to worry" or similar phrasing —
+  that reads as minimizing or dismissing an elevated result, which the
+  Tone Guidance above already forbids ("do not minimize the result").
+  The reassurance here is about correcting a common overreaction
+  (elevated ≠ inevitable), not about telling the user their concern is
+  unwarranted — those are different things, and only the first is
+  appropriate for this branch.
 - State the classification in plain language, attributed to the
   calculator, paired with "not a diagnosis" in the same sentence or the
   next one. This is the first time the classification label itself is
   spoken — turn 1 only covered the numeric comparison, not the label — so
-  state it plainly rather than as a recap. If the numeric comparison from
+  state it plainly rather than as a recap. Do not mention the specific
+  numeric cutoff (1.67% or 20%) here — per 00_scope-and-safety.md, that's
+  reserved for the mismatch case only. If the numeric comparison from
   turn 1 pointed a different direction than this label (e.g., the numbers
   were below the age-and-race comparison average but the label is
-  elevated), reconcile it per 00_scope-and-safety.md's rule rather than
-  letting it sound contradictory.
+  elevated), reconcile it per 00_scope-and-safety.md's rule — and only in
+  that specific case, name the specific cutoff that applies.
 - One sentence noting this is a snapshot, not fixed — it can change over
   time as personal or family health history changes.
 - One sentence: this doesn't automatically mean a specific test,

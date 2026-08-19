@@ -759,7 +759,7 @@ function ensureTextFallbackGreeting() {
   if (textMessages.length > 0) return;
   textMessages.push({
     role: "assistant",
-    content: "Hi, I'm your virtual health educator. I'm here to help you understand your breast cancer risk results. This is not a diagnosis, and I'm not a clinician. What would you like help understanding?",
+    content: "Hi, I'm your virtual health educator. I'm here to help you understand your breast cancer risk results. This is not a diagnosis, and I'm not a clinician. Ready to start?",
     timestamp: new Date().toISOString(),
     channel: "text",
   });
@@ -1008,9 +1008,15 @@ textChatForm.addEventListener("submit", async (event) => {
       }
     }
 
+    // A text-only fallback begins with one fixed assistant greeting. The
+    // user's response to that greeting is still the initial-explanation
+    // turn; message count alone would incorrectly label it as follow-up.
+    const completedAssistantTurns = textMessages.filter(
+      (message) => message.role === "assistant" && message.channel !== "text",
+    ).length;
     const response = await postJson("/api/chat", {
       riskResult: result,
-      stage: textMessages.length <= 1 ? "initial_explanation" : "follow_up",
+      stage: completedAssistantTurns === 0 ? "initial_explanation" : "follow_up",
       messages: textMessages.slice(-12).map(({ role, content }) => ({ role, content })),
     });
 
