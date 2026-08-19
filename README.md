@@ -1,6 +1,14 @@
-# BC Risk Educator
+# Conversational Agent for Breast Cancer Risk Communication
 
-Breast-cancer risk calculator and grounded AI health educator. The web application runs on Cloudflare Workers and the real-time avatar uses LiveAvatar **LITE mode** with a separate Python LiveKit agent.
+## Project summary
+
+BC Risk Educator is a responsive web application that combines a breast-cancer risk calculator with a conversational AI health educator. It is designed to make numerical risk estimates easier to understand, reduce unnecessary worry, and encourage an appropriate next step when a result is elevated.
+
+After completing the assessment, a user receives estimated five-year and lifetime breast-cancer risk results and can discuss them with a real-time, on-screen avatar. The conversation explains the estimates in plain language, compares them with age-based averages, and follows a risk-specific pathway: users with low or average risk receive reassurance and general prevention guidance, while users with elevated risk are encouraged to discuss the result with a qualified healthcare professional. Conversations are intended to remain focused and brief, typically lasting two to five minutes.
+
+Responses are grounded in a curated evidence base containing clinical guidance, reputable patient-education resources, and relevant behavioral-science principles. The educator does not diagnose, predict an individual's outcome, or present itself as a clinician. Visible consent and medical disclaimers reinforce these boundaries. If video, audio, microphone access, LiveAvatar, or the voice pipeline is unavailable, the same grounded conversation remains accessible through the text interface.
+
+The web application and deterministic retrieval layer run on Cloudflare Workers. The real-time avatar uses LiveAvatar **LITE mode**, a separate Python LiveKit agent, Groq for language generation, and configurable speech-to-text and text-to-speech services. The application also supports transcripts, session metadata, downloadable session JSON, and saved risk estimates for later review.
 
 ## Architecture
 
