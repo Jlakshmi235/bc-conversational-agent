@@ -165,8 +165,9 @@ function containsAny(text: string, terms: string[]): boolean {
 
 // Whole-message match only — deliberately not a substring check, so a
 // longer message that happens to contain "yes" somewhere isn't swept into
-// this branch. Bare confirmations are short by nature.
-const AFFIRMATIVE = /^(yes|yeah|yep|yup|sure|ok|okay|got it|that makes sense|makes sense|understood|i understand|i think so|that helps|sounds good)[.,!]?$/;
+// this branch. Include the short natural acknowledgements produced by
+// speech-to-text (for example, "yes it does" and "yes I understood").
+const AFFIRMATIVE = /^(?:yes(?:,?\s+(?:it does|i do|i understand|i understood|i get it|that does|that did|that makes sense|that helps|that helped|it makes sense|i understand what (?:you explained|was explained|is explained)|i understood what (?:you explained|was explained|is explained)))?|yeah|yep|yup|sure|ok|okay|got it|that makes sense|makes sense|understood|i understand|i understood|i get it|i think so|that helps|that helped|sounds good)[.,!]?$/;
 const NEGATIVE = /^(no(?:,?\s+(?:that'?s fine|thanks?|thank you))?|nah|not really|not quite|not really understand|i don'?t|no thanks|not right now)[.,!]?$/;
 
 export function inferPendingConfirmation(
