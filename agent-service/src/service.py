@@ -21,6 +21,7 @@ from .pipeline import (
     build_session,
     mute_agent_audio_on_publish,
     publish_transcript,
+    wire_agent_errors,
     wire_room_observability,
     wire_transcripts,
     wire_typed_messages,
@@ -64,6 +65,7 @@ class AgentRuntime:
             http_session=inference_http_session,
         )
         wire_transcripts(self.agent_session, self.room)
+        wire_agent_errors(self.agent_session, self.room)
         wire_typed_messages(self.agent_session, self.room)
 
         async def publish_assistant_transcript(text: str, final: bool) -> None:

@@ -82,6 +82,50 @@ function isAuthorized(request: Request, env: GroqProxyEnv): boolean {
   return auth === `Bearer ${env.LLM_PROXY_TOKEN}`;
 }
 
+const MAX_INTERACTIVE_RETRY_MS = 5_000;
+
+function groqRetryDelayMs(response: Response, message = ""): number {
+  const retryAfter = Number(response.headers.get("retry-after"));
+  const messageMatch = message.match(/try again in\s+([\d.]+)s/i);
+  const delayMs = Number.isFinite(retryAfter) && retryAfter > 0
+    ? Math.ceil(retryAfter * 1_000)
+    : messageMatch
+      ? Math.ceil(Number(messageMatch[1]) * 1_000)
+      : 0;
+  // A short TPM window is worth retrying during a live turn. A TPD delay can
+  // be hours, so return immediately and let the agent surface an error.
+  return delayMs > 0 && delayMs <= MAX_INTERACTIVE_RETRY_MS ? delayMs : 0;
+}
+
+async function fetchGroq(body: Record<string, unknown>, apiKey: string): Promise<Response> {
+  const request = () => fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  let response = await request();
+  if (response.status !== 429) return response;
+
+  const errorPayload = await response.clone().json().catch(() => null) as
+    | { error?: { message?: string } }
+    | null;
+  const delayMs = groqRetryDelayMs(response, errorPayload?.error?.message || "");
+  if (!delayMs) return response;
+
+  console.warn(JSON.stringify({
+    event: "groq_rate_limit_retry",
+    delayMs,
+    model: body.model,
+  }));
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  response = await request();
+  return response;
+}
+
 export async function proxyChatCompletion(request: Request, env: GroqProxyEnv): Promise<Response> {
   if (!isAuthorized(request, env)) {
     return Response.json({ error: { message: "Unauthorized LLM proxy request." } }, { status: 401 });
@@ -131,14 +175,7 @@ export async function proxyChatCompletion(request: Request, env: GroqProxyEnv): 
     messages,
   };
 
-  const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(upstreamBody),
-  });
+  const upstream = await fetchGroq(upstreamBody, env.GROQ_API_KEY);
 
   // Preserve Groq's OpenAI-compatible response shape for LiveAvatar.
   const headers = new Headers(upstream.headers);

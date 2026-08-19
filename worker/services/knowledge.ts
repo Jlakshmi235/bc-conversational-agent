@@ -67,6 +67,39 @@ function stripFrontMatter(markdown: string): string {
   return markdown.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, "").trim();
 }
 
+// Keep the source modules detailed for clinical/content review, but omit
+// repeated theory, style, and citation sections from the prompt sent on every
+// turn. The system prompt and always-loaded scope addendum enforce those rules.
+const RUNTIME_OMITTED_SECTIONS = new Set([
+  "theory tags",
+  "theory use",
+  "ftt use",
+  "ftt communication behavior",
+  "ftt boundary",
+  "pmt use",
+  "pmt communication behavior",
+  "tone guidance",
+  "spoken delivery format",
+  "sources",
+  "disclaimer",
+  "safety",
+  "scope",
+]);
+
+function compactModuleForRuntime(markdown: string): string {
+  const lines = stripFrontMatter(markdown).split("\n");
+  let omitSection = false;
+  const kept = lines.filter((line) => {
+    const heading = line.match(/^##\s+(.+?)\s*$/);
+    if (heading) {
+      omitSection = RUNTIME_OMITTED_SECTIONS.has(heading[1].toLowerCase());
+      return !omitSection;
+    }
+    return !omitSection;
+  });
+  return kept.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 const MODULES: KnowledgeModule[] = [
   {
     id: "scope-and-safety",
@@ -74,7 +107,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["initial_explanation", "follow_up", "closing"],
     branches: ["low-average", "elevated"],
     topics: [],
-    content: stripFrontMatter(scopeSafetyRaw),
+    content: compactModuleForRuntime(scopeSafetyRaw),
   },
   {
     id: "explain-risk",
@@ -82,7 +115,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["initial_explanation"],
     branches: ["low-average", "elevated"],
     topics: ["risk_explanation"],
-    content: stripFrontMatter(explainRiskRaw),
+    content: compactModuleForRuntime(explainRiskRaw),
   },
   {
     id: "understanding-and-concerns",
@@ -90,7 +123,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["follow_up"],
     branches: ["low-average", "elevated"],
     topics: ["understanding", "concerns", "risk_explanation"],
-    content: stripFrontMatter(understandingRaw),
+    content: compactModuleForRuntime(understandingRaw),
   },
   {
     id: "gail-limitations",
@@ -98,7 +131,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["follow_up"],
     branches: ["low-average", "elevated"],
     topics: ["model_limitations", "risk_factors", "family_history"],
-    content: stripFrontMatter(limitationsRaw),
+    content: compactModuleForRuntime(limitationsRaw),
   },
   {
     id: "low-average-risk-pathway",
@@ -106,7 +139,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["follow_up", "closing"],
     branches: ["low-average"],
     topics: ["confirmed_understanding", "screening_guidance"],
-    content: stripFrontMatter(lowAverageRaw),
+    content: compactModuleForRuntime(lowAverageRaw),
   },
   {
     id: "elevated-risk-pathway",
@@ -114,7 +147,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["follow_up", "closing"],
     branches: ["elevated"],
     topics: ["confirmed_understanding", "screening_guidance"],
-    content: stripFrontMatter(elevatedRaw),
+    content: compactModuleForRuntime(elevatedRaw),
   },
   {
     id: "clinical-discussion",
@@ -122,7 +155,7 @@ const MODULES: KnowledgeModule[] = [
     stages: ["follow_up", "closing"],
     branches: ["low-average", "elevated"],
     topics: ["clinician_discussion", "next_steps", "family_history"],
-    content: stripFrontMatter(clinicianDiscussionRaw),
+    content: compactModuleForRuntime(clinicianDiscussionRaw),
   },
 ];
 

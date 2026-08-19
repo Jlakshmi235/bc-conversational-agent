@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 
 from aiohttp import ClientSession
 from livekit import rtc
@@ -113,6 +114,41 @@ def wire_transcripts(session: AgentSession, room: rtc.Room) -> None:
         if text:
             logger.info("User input transcribed: final=%s text=%r", final, text)
             asyncio.create_task(publish_transcript(room, role="user", text=text, final=final))
+
+
+def wire_agent_errors(session: AgentSession, room: rtc.Room) -> None:
+    last_llm_notice_at = 0.0
+
+    @session.on("error")
+    def _agent_error(event) -> None:
+        nonlocal last_llm_notice_at
+        error = getattr(event, "error", None)
+        error_type = str(getattr(error, "type", "") or "")
+        logger.error(
+            "Agent pipeline error: type=%s label=%s recoverable=%s detail=%s",
+            error_type or type(error).__name__,
+            getattr(error, "label", "unknown"),
+            getattr(error, "recoverable", None),
+            getattr(error, "error", error),
+        )
+        if error_type != "llm_error":
+            return
+
+        now = time.monotonic()
+        if now - last_llm_notice_at < 2:
+            return
+        last_llm_notice_at = now
+        asyncio.create_task(
+            publish_transcript(
+                room,
+                role="assistant",
+                text=(
+                    "Sorry, I couldn't generate a response because the language service "
+                    "is temporarily unavailable. Please try again shortly."
+                ),
+                final=True,
+            )
+        )
 
 
 def wire_typed_messages(session: AgentSession, room: rtc.Room) -> None:
